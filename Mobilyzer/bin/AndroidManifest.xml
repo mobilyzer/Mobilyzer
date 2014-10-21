@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.mobilyzer">
+    
+    <uses-sdk
+        android:minSdkVersion="12"
+        android:targetSdkVersion="14" />
+    
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <uses-permission android:name="android.permission.BATTERY_STATS" />
+  	<uses-permission android:name="android.permission.USE_CREDENTIALS" />
+  	<uses-permission android:name="android.permission.GET_ACCOUNTS" />
+    <uses-permission android:name="android.permission.INTERNET" />
+  	<uses-permission android:name="android.permission.READ_PHONE_STATE" />
+  	<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+  	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+  	<uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+  	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+  	
+  	<permission
+        android:name="com.mobilyzer.permission.C2D_MESSAGE"
+        android:protectionLevel="signature" />
+    <uses-permission
+        android:name="com.mobilyzer.permission.C2D_MESSAGE" />
+
+    <!-- This app has permission to register and receive data message. -->
+    <uses-permission
+        android:name="com.google.android.c2dm.permission.RECEIVE" />
+  	
+    
+    <application>
+        <meta-data android:name="com.google.android.gms.version" android:value="@integer/google_play_services_version" />
+        <service android:name="com.mobilyzer.MeasurementScheduler" >
+            <intent-filter android:priority="@string/scheduler_priority">
+                <action android:name="com.mobilyzer.MeasurementScheduler"></action>
+            </intent-filter>
+        </service>
+      <!-- <receiver android:name="com.mobilyzer.util.PhoneUtils$ConnectivityChangeReceiver">
+    <intent-filter>
+        <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
+    </intent-filter>
+	</receiver> --> 
+	
+    <receiver
+            android:name="com.mobilyzer.gcm.GcmBroadcastReceiver"
+            android:permission="com.google.android.c2dm.permission.SEND" >
+            <intent-filter>
+                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
+              <action android:name="com.google.android.c2dm.intent.REGISTRATION" />   
+                <category android:name="com.mobilyzer" />
+            </intent-filter>
+        </receiver>
+
+        <service android:name="com.mobilyzer.gcm.GcmIntentService" />
+        <service android:name="com.mobilyzer.PLTExecutorService" />
+        <!--  <activity
+            android:name="com.mobilyzer.util.CrosswalkActivity"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+             >
+		</activity>-->
+    </application>
+</manifest>
