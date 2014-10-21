@@ -4,7 +4,16 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 
 import com.mobilyzer.UpdateIntent;
 import com.squareup.okhttp.ConnectionPool;
@@ -76,7 +85,37 @@ public class AndroidWebView extends WebView {
 		}
 		
 		
-		
+		TrustManager localTrustmanager = new X509TrustManager() {
+
+			@Override
+			public X509Certificate[] getAcceptedIssuers() {
+				return null;
+			}
+
+			@Override
+			public void checkServerTrusted(X509Certificate[] chain,
+					String authType) throws CertificateException {
+			}
+
+			@Override
+			public void checkClientTrusted(X509Certificate[] chain,
+					String authType) throws CertificateException {
+
+			}
+		};
+
+		// Create SSLContext and set the socket factory as default
+		try {
+			SSLContext sslc = SSLContext.getInstance("SSL");
+			sslc.init(null, new TrustManager[] { localTrustmanager },
+					new SecureRandom());
+			client.setSslSocketFactory(sslc.getSocketFactory());
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		} catch (KeyManagementException e) {
+			e.printStackTrace();
+		}
+
 		
 		setWebViewClient(new WebViewClient(){
 		      
@@ -233,6 +272,10 @@ public class AndroidWebView extends WebView {
 		            	AndroidWebView spdyWebView=new AndroidWebView(AndroidWebView.this.context, true, WebViewProtocol.SPDY ,AndroidWebView.this.startTimeFilter, AndroidWebView.this.url);
 	            		spdyWebView.loadUrl();
 		            }
+		            
+		            AndroidWebView.this.destroyDrawingCache();
+//		            AndroidWebView.this.destroy();
+		            
 		            
 		          } 
 		      }

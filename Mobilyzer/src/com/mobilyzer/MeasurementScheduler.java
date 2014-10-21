@@ -452,7 +452,7 @@ public class MeasurementScheduler extends Service {
         mainQueue.poll();
         
         if(task.getDescription().getType().equals(RRCTask.TYPE) && phoneUtils.getNetwork().equals(PhoneUtils.NETWORK_WIFI)){
-          long updatedStartTime = System.currentTimeMillis() + (long) (5 * 60 * 1000);
+          long updatedStartTime = System.currentTimeMillis() + (long) (10 * 60 * 1000);
           task.getDescription().startTime.setTime(updatedStartTime);
           mainQueue.add(task);
           Logger.i("MeasurementScheduler: handleMeasurement: delaying RRC task on "+phoneUtils.getNetwork());
@@ -942,7 +942,7 @@ public class MeasurementScheduler extends Service {
     // }
     task.getDescription().intervalSec *= adjust;
     Calendar now = Calendar.getInstance();
-    now.add(Calendar.SECOND, (int) (task.getDescription().intervalSec / 10));
+    now.add(Calendar.SECOND, (int) (task.getDescription().intervalSec / 60));
     task.getDescription().startTime = now.getTime();
     if (task.getDescription().startTime.after(task.getDescription().endTime)) {
       task.getDescription().endTime =
