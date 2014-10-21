@@ -20,17 +20,12 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.os.PowerManager;
 
 import java.io.InvalidClassException;
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Map;
-
-
-
-
 
 import com.mobilyzer.MeasurementDesc;
 import com.mobilyzer.MeasurementResult;
@@ -59,7 +54,7 @@ public class PageLoadTimeTask extends MeasurementTask {
 
 	private volatile ArrayList<String> navigationTimingResults; 
 	private volatile ArrayList<String> resourceTimingResults;
-//	private volatile int numOfResourceEntries;
+
 	
 	private long dataConsumed;
 
@@ -137,7 +132,6 @@ public class PageLoadTimeTask extends MeasurementTask {
 		super(new PageLoadTimeDesc(desc.key, desc.startTime, desc.endTime, desc.intervalSec,
 				desc.count, desc.priority, desc.contextIntervalSec, desc.parameters));
 
-//		numOfResourceEntries=-1;
 		navigationTimingResults=new ArrayList<String>();
 		resourceTimingResults= new ArrayList<String>();
 		startTimeFilter=System.currentTimeMillis();
@@ -192,9 +186,6 @@ public class PageLoadTimeTask extends MeasurementTask {
 		 return resourceTimingResults;
 	 }
 
-//	 public synchronized int getNumOfResourceEntries(){
-//		 return numOfResourceEntries;
-//	 }
 
 	 public synchronized boolean isDone(){
 		 if(((PageLoadTimeDesc)getDescription()).spdyTest){
@@ -215,25 +206,7 @@ public class PageLoadTimeTask extends MeasurementTask {
 	 public MeasurementResult[] call() throws MeasurementError {
 		 MeasurementResult[] mrArray = new MeasurementResult[1];
 		 PageLoadTimeDesc taskDesc = (PageLoadTimeDesc) this.measurementDesc;
-//		 if(!taskDesc.spdyTest){
-////			 PowerManager pm = (PowerManager) PhoneUtils.getGlobalContext().getSystemService(Context.POWER_SERVICE);
-////			 if(pm.isScreenOn()){
-//				 Logger.e("ashkan_plt: PLT Test cancelled, Screen is on");
-//				 PhoneUtils phoneUtils = PhoneUtils.getPhoneUtils();
-//				 MeasurementResult result = new MeasurementResult(
-//						 phoneUtils.getDeviceInfo().deviceId,
-//						 phoneUtils.getDeviceProperty(this.getKey()),
-//						 PageLoadTimeTask.TYPE, System.currentTimeMillis() * 1000,
-//						 TaskProgress.FAILED, this.measurementDesc);
-//				 mrArray[0]=result;
-//				 return mrArray;
-////			 }
-//		 }
 
-		 //    Intent newintent = new Intent();
-		 //    newintent.setAction(UpdateIntent.PLT_MEASUREMENT_ACTION);
-		 //    newintent.putExtra(UpdateIntent.PLT_TASK_PAYLOAD_URL, taskDesc.url);
-		 //    PhoneUtils.getGlobalContext().sendBroadcast(newintent);
 
 		 Intent newintent = new Intent(PhoneUtils.getGlobalContext(), PLTExecutorService.class);
 		 newintent.putExtra(UpdateIntent.PLT_TASK_PAYLOAD_URL, taskDesc.url);
@@ -267,7 +240,6 @@ public class PageLoadTimeTask extends MeasurementTask {
 					        		continue;
 					        	}
 					        	resourceTimingResults.add(res);
-					        	Logger.e("ashkan_plt:---"+res);
 					        }
 					        Logger.d("ashkan_plt: >>>>resourceTimingResults: "+resrourcesStr.length()+" "+resourceTimingResults.size());
 
@@ -293,14 +265,6 @@ public class PageLoadTimeTask extends MeasurementTask {
 		 }
 		 Logger.e("ashkan_plt: PLTTask isDone");
 		 PhoneUtils.getGlobalContext().unregisterReceiver(broadcastReceiver);
-//		 MeasurementResult[] mrArray = new MeasurementResult[1];
-
-		 
-//			Intent startMain = new Intent(Intent.ACTION_MAIN);
-//			startMain.addCategory(Intent.CATEGORY_HOME);
-////			startMain.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-//			PhoneUtils.getGlobalContext().startActivity(startMain);
-
 		 
 		 if(isDone()){
 

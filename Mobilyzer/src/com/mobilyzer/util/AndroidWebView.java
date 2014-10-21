@@ -142,14 +142,11 @@ public class AndroidWebView extends WebView {
 		    	  if(AndroidWebView.this.spdyTest){
 		    		  if(AndroidWebView.this.protocol.equals(WebViewProtocol.HTTP)){
 				    	  resourcesStr.append("mobilyzer_resource|http|"+objTiminStr);
-//				    	  newintent.putExtra(UpdateIntent.PLT_TASK_PAYLOAD_RESULT_RES, "mobilyzer_resource|http|"+objTiminStr);
 		    		  }else{
 				    	  resourcesStr.append("mobilyzer_resource|spdy|"+objTiminStr);
-//				    	  newintent.putExtra(UpdateIntent.PLT_TASK_PAYLOAD_RESULT_RES, "mobilyzer_resource|spdy|"+objTiminStr);  
 		    		  }
 		    	  }else{
 			    	  resourcesStr.append("mobilyzer_resource|http|"+objTiminStr);
-//			    	  newintent.putExtra(UpdateIntent.PLT_TASK_PAYLOAD_RESULT_RES, "mobilyzer_resource|http|"+objTiminStr);
 		    	  }
 		      }
 		      Intent newintent = new Intent();
@@ -232,7 +229,6 @@ public class AndroidWebView extends WebView {
 			    	
 			    	
 			    	objsTimings.add(urlStr+"::"+relStartTime+"::"+(endTime-startTime));
-//			    	Log.e("ashkan", "load time for "+urlStr+":\n\t "+(endTime-startTime));
 			    	InputStream newIs = new ByteArrayInputStream(baos.toByteArray());
 			    	return new WebResourceResponse(mimeType, encoding, newIs);
 			    
@@ -249,7 +245,7 @@ public class AndroidWebView extends WebView {
 		      @Override
 		      public void onConsoleMessage(String message, int lineNumber, String sourceID) {
 		    	  
-//		    	  Logger.d("onConsoleMessage: "+message);
+		    	  Logger.d("onConsoleMessage: "+message);
 		          Intent newintent = new Intent();
 		          newintent.setAction((UpdateIntent.PLT_MEASUREMENT_ACTION)+AndroidWebView.this.startTimeFilter);
 		          if(message.startsWith("mobilyzer_navigation")){
