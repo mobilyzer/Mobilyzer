@@ -170,14 +170,6 @@ public class MeasurementScheduler extends Service {
 //    loadSchedulerState();//TODO(ASHKAN)
     
     
-//    final String[] MANDATORY_PAKS = {
-//            "webviewchromium.pak", "en-US.pak"
-//          };
-//    ResourceExtractor.setMandatoryPaksToExtract(MANDATORY_PAKS);
-//    ResourceExtractor.setExtractImplicitLocaleForTesting(false);
-//    AwBrowserProcess.loadLibrary();
-//    AwBrowserProcess.start(getApplicationContext());
-
 
     // Register activity specific BroadcastReceiver here
     IntentFilter filter = new IntentFilter();
@@ -195,22 +187,6 @@ public class MeasurementScheduler extends Service {
         Logger.d(intent.getAction() + " RECEIVED");
         if (intent.getAction().equals(UpdateIntent.MEASUREMENT_ACTION)) {
           handleMeasurement();
-//        } else if (intent.getAction().equals(UpdateIntent.PLT_MEASUREMENT_ACTION) && intent.hasExtra(UpdateIntent.PLT_TASK_PAYLOAD_URL)) {
-//          final String[] MANDATORY_PAKS = {
-//            "webviewchromium.pak", "en-US.pak"
-//          };
-//          ResourceExtractor.setMandatoryPaksToExtract(MANDATORY_PAKS);
-//        ResourceExtractor.setExtractImplicitLocaleForTesting(false);
-//          AwBrowserProcess.loadLibrary();
-//          AwBrowserProcess.start(getApplicationContext());
-        	
-        	
-        	
-//            MyWebView mWebview = new MyWebView(getApplicationContext());
-//          mWebview.getAwContents().clearCache(true);
-//          mWebview.getAwContents().getSettings().setJavaScriptEnabled(true);
-//          mWebview.getAwContents().loadUrl(new LoadUrlParams(intent.getStringExtra(UpdateIntent.PLT_TASK_PAYLOAD_URL)));
-       
           
         } else if (intent.getAction().equals(UpdateIntent.GCM_MEASUREMENT_ACTION)) {
           try {
@@ -942,7 +918,7 @@ public class MeasurementScheduler extends Service {
     // }
     task.getDescription().intervalSec *= adjust;
     Calendar now = Calendar.getInstance();
-    now.add(Calendar.SECOND, (int) (task.getDescription().intervalSec / 60));
+    now.add(Calendar.SECOND, (int) (task.getDescription().intervalSec / 30));
     task.getDescription().startTime = now.getTime();
     if (task.getDescription().startTime.after(task.getDescription().endTime)) {
       task.getDescription().endTime =
