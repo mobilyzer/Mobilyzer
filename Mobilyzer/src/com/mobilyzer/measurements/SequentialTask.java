@@ -151,7 +151,7 @@ public class SequentialTask extends MeasurementTask{
   @Override
   public void writeToParcel(Parcel dest, int flags) {
     super.writeToParcel(dest, flags);
-    dest.writeParcelableArray((MeasurementTask[])tasks.toArray(), flags);
+    dest.writeParcelableArray(tasks.toArray(new MeasurementTask[tasks.size()]), flags);
   }
   
 
