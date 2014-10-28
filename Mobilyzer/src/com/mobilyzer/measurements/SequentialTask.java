@@ -119,11 +119,13 @@ public class SequentialTask extends MeasurementTask{
   protected SequentialTask(Parcel in) {
     super(in);
     ClassLoader loader = Thread.currentThread().getContextClassLoader();
-    MeasurementTask[] tempTasks = (MeasurementTask[])in.readParcelableArray(loader);
+    // we cannot directly cast Parcelable[] to MeasurementTask[]. Cast them one-by-one
+    Parcelable[] tempTasks = in.readParcelableArray(loader);
     executor=Executors.newSingleThreadExecutor();
     tasks = new ArrayList<MeasurementTask>();
     long totalduration=0;
-    for ( MeasurementTask mt : tempTasks ) {
+    for ( Parcelable pTask : tempTasks ) {
+      MeasurementTask mt = (MeasurementTask) pTask;
       tasks.add(mt);
       totalduration+=mt.getDuration();
     }
