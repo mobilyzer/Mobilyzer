@@ -139,7 +139,9 @@ public class Checkin {
       
       status.put("properties", MeasurementJsonConvertor.encodeToJson(deviceProperty));
       
-      resourceCapManager.updateDataUsage(ResourceCapManager.PHONEUTILCOST);
+      if (PhoneUtils.getPhoneUtils().getNetwork() != PhoneUtils.NETWORK_WIFI) {
+    	  resourceCapManager.updateDataUsage(ResourceCapManager.PHONEUTILCOST);
+      }
       
       Logger.d(status.toString());
       
@@ -148,8 +150,9 @@ public class Checkin {
       
       String result = serviceRequest("checkin", status.toString());
       Logger.d("Checkin result: " + result);
-      
-      resourceCapManager.updateDataUsage(result.length());
+      if (PhoneUtils.getPhoneUtils().getNetwork() != PhoneUtils.NETWORK_WIFI) {
+    	  resourceCapManager.updateDataUsage(result.length());
+      }
       
       // Parse the result
       Vector<MeasurementTask> schedule = new Vector<MeasurementTask>();
@@ -281,7 +284,9 @@ public class Checkin {
       throws IOException {
     Logger.i("uploadChunkedArray uploading: " + 
         resultArray.toString());
-    resourceCapManager.updateDataUsage(resultArray.toString().length());
+    if (PhoneUtils.getPhoneUtils().getNetwork() != PhoneUtils.NETWORK_WIFI) {
+    	resourceCapManager.updateDataUsage(resultArray.toString().length());
+    }
     String response = serviceRequest("postmeasurement", resultArray.toString());
     try {
       JSONObject responseJson = new JSONObject(response);
@@ -300,7 +305,9 @@ public class Checkin {
     try {
       resultJson = MeasurementJsonConvertor.encodeToJson(result);
       Logger.d("GCM Measurement result converted to json: "+resultJson.toString());
-      resourceCapManager.updateDataUsage(resultJson.toString().length());
+      if (PhoneUtils.getPhoneUtils().getNetwork() != PhoneUtils.NETWORK_WIFI) {
+    	  resourceCapManager.updateDataUsage(resultJson.toString().length());
+      }
       String response = serviceRequest("postgcmmeasurement", resultJson.toString());
       try {
         JSONObject responseJson = new JSONObject(response);

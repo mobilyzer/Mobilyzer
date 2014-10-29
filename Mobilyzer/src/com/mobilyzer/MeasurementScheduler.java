@@ -918,7 +918,7 @@ public class MeasurementScheduler extends Service {
     // }
     task.getDescription().intervalSec *= adjust;
     Calendar now = Calendar.getInstance();
-    now.add(Calendar.SECOND, (int) (task.getDescription().intervalSec / 30));
+    now.add(Calendar.SECOND, (int) (task.getDescription().intervalSec / 24));
     task.getDescription().startTime = now.getTime();
     if (task.getDescription().startTime.after(task.getDescription().endTime)) {
       task.getDescription().endTime =
