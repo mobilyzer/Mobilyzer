@@ -1,7 +1,7 @@
 Mobilyzer
 =========
 
-A library provides cellular network measurement for Andoird developers
+Mobilyzer is a network measurment platform, developed for Android applications. Apps can include Mobilyzer to issue various types of measurement experiments from the server and client side.
 
 =============================
 

@@ -121,11 +121,12 @@ public class ParallelTask extends MeasurementTask{
   protected ParallelTask(Parcel in) {
     super(in);
     ClassLoader loader = Thread.currentThread().getContextClassLoader();
-    MeasurementTask[] tempTasks = (MeasurementTask[])in.readParcelableArray(loader);
-//    executor = Executors.newFixedThreadPool(tasks.size());
+    // we cannot directly cast Parcelable[] to MeasurementTask[]. Cast them one-by-one
+    Parcelable[] tempTasks = in.readParcelableArray(loader);
     tasks = new ArrayList<MeasurementTask>();
     long maxDuration = 0;
-    for ( MeasurementTask mt : tempTasks ) {
+    for ( Parcelable pTask : tempTasks ) {
+      MeasurementTask mt = (MeasurementTask) pTask;
       tasks.add(mt);
       if (mt.getDuration() > maxDuration) {
         maxDuration = mt.getDuration();
@@ -154,7 +155,7 @@ public class ParallelTask extends MeasurementTask{
   @Override
   public void writeToParcel(Parcel dest, int flags) {
     super.writeToParcel(dest, flags);
-    dest.writeParcelableArray((MeasurementTask[])tasks.toArray(), flags);
+    dest.writeParcelableArray(tasks.toArray(new MeasurementTask[tasks.size()]), flags);
   }
   
   @Override
