@@ -228,7 +228,7 @@ public class PageLoadTimeTask extends MeasurementTask {
 						 navigationTimingResults.add(navigationStr);
 						 if(intent.hasExtra(UpdateIntent.PLT_TASK_PAYLOAD_BYTE_USED)){
 							 dataConsumed+=intent.getIntExtra(UpdateIntent.PLT_TASK_PAYLOAD_BYTE_USED, 0);
-							 Logger.d("ashkan_plt: total data consumed: "+dataConsumed);
+							 Logger.d("ashkan_plt: total data consumed: "+dataConsumed*2);
 						 }
 						 
 						 Logger.d("ashkan_plt: >>>>navigationTimingResults: "+navigationTimingResults.size());
@@ -371,6 +371,6 @@ public class PageLoadTimeTask extends MeasurementTask {
 	  */
 	 @Override
 	 public long getDataConsumed() {
-		 return dataConsumed;
+		 return 2*dataConsumed;
 	 }
 }
