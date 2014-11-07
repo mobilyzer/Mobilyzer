@@ -55,6 +55,8 @@ import com.mobilyzer.measurements.SequentialTask.SequentialDesc;
 import com.mobilyzer.measurements.TCPThroughputTask.TCPThroughputDesc;
 import com.mobilyzer.measurements.TracerouteTask.TracerouteDesc;
 import com.mobilyzer.measurements.UDPBurstTask.UDPBurstDesc;
+import com.mobilyzer.measurements.VideoQoETask;
+import com.mobilyzer.measurements.VideoQoETask.VideoQoEDesc;
 import com.mobilyzer.util.Logger;
 
 /**
@@ -67,7 +69,7 @@ import com.mobilyzer.util.Logger;
 public final class API {
   public enum TaskType {
     DNSLOOKUP, HTTP, PING, TRACEROUTE, TCPTHROUGHPUT, UDPBURST,
-    PARALLEL, SEQUENTIAL, INVALID, PLT
+    PARALLEL, SEQUENTIAL, INVALID, PLT, VIDEOQOE
   }
 
   /**
@@ -298,6 +300,10 @@ public final class API {
 //        task = new PageLoadTimeTask(new PageLoadTimeDesc(clientKey, startTime, endTime
 //          , intervalSec, count, priority, contextIntervalSec, params));
 //        break;
+      case VIDEOQOE:
+        task = new VideoQoETask(new VideoQoEDesc(clientKey, startTime, endTime
+          , intervalSec, count, priority, contextIntervalSec, params));
+        break;
       default:
         throw new MeasurementError("Undefined measurement type. Candidate: " +
             "DNSLOOKUP, HTTP, PING, TRACEROUTE, TCPTHROUGHPUT, UDPBURST");

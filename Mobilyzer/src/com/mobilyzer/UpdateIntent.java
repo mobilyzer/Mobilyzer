@@ -31,6 +31,14 @@ public class UpdateIntent extends Intent {
 //  public static final String PLT_TASK_PAYLOAD_RESULT_NUM = "PLT_TASK_PAYLOAD_RESULT_NUM";
 //  public static final String PLT_TASK_PAYLOAD_CLOSE_ACTIVITY = "PLT_TASK_PAYLOAD_CLOSE_ACTIVITY";
 //  public static final String PLT_TASK_PAYLOAD_START_ACTIVITY = "PLT_TASK_PAYLOAD_START_ACTIVITY";
+  public static final String VIDEO_TASK_PAYLOAD_IS_SUCCEED = "VIDEO_TASK_PAYLOAD_IS_SUCCEED";
+  public static final String VIDEO_TASK_PAYLOAD_NUM_FRAME_DROPPED = "VIDEO_TASK_PAYLOAD_NUM_FRAME_DROPPED";
+  public static final String VIDEO_TASK_PAYLOAD_GOODPUT_TIMESTAMP = "VIDEO_TASK_PAYLOAD_GOODPUT_TIMESTAMP";
+  public static final String VIDEO_TASK_PAYLOAD_GOODPUT_VALUE = "VIDEO_TASK_PAYLOAD_GOODPUT_VALUE";
+  public static final String VIDEO_TASK_PAYLOAD_BITRATE_TIMESTAMP = "VIDEO_TASK_PAYLOAD_BITRATE_TIMESTAMP";
+  public static final String VIDEO_TASK_PAYLOAD_BITRATE_VALUE = "VIDEO_TASK_PAYLOAD_BITRATE_VALUE";
+  public static final String VIDEO_TASK_PAYLOAD_INITIAL_LOADING_TIME = "VIDEO_TASK_PAYLOAD_INITIAL_LOADING_TIME";
+  public static final String VIDEO_TASK_PAYLOAD_REBUFFER_TIME = "VIDEO_TASK_PAYLOAD_REBUFFER_TIME";
   
   
   // Different types of actions that this intent can represent:
@@ -51,6 +59,8 @@ public class UpdateIntent extends Intent {
       APP_PREFIX + ".GCM_MEASUREMENT_ACTION";
   public static final String PLT_MEASUREMENT_ACTION =
       APP_PREFIX + ".PLT_MEASUREMENT_ACTION";
+  public static final String VIDEO_MEASUREMENT_ACTION =
+      APP_PREFIX + ".VIDEO_MEASUREMENT_ACTION";
   
   public static final String USER_RESULT_ACTION =
       PACKAGE_PREFIX + ".USER_RESULT_ACTION";  
