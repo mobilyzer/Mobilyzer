@@ -109,7 +109,7 @@ public class DashVodRendererBuilder implements RendererBuilder,
   public void onManifest(String contentId, MediaPresentationDescription manifest) {
     Handler mainHandler = player.getMainHandler();
     LoadControl loadControl = new DefaultLoadControl(new BufferPool(BUFFER_SEGMENT_SIZE));
-//    DefaultBandwidthMeter bandwidthMeter = new DefaultBandwidthMeter(mainHandler, player);
+//    DefaultBandwidthMeter videoBandwidthMeter = new DefaultBandwidthMeter(mainHandler, player);
     DefaultBandwidthMeter videoBandwidthMeter = new DefaultBandwidthMeter("video", mainHandler, player);
     DefaultBandwidthMeter audioBandwidthMeter = new DefaultBandwidthMeter("audio", mainHandler, player);
 

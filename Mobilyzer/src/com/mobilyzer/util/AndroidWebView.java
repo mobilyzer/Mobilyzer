@@ -26,6 +26,7 @@ import com.squareup.okhttp.internal.Util;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.os.Handler;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
@@ -133,44 +134,57 @@ public class AndroidWebView extends WebView {
 		      public void onPageFinished(WebView view, String url) {
 		    	Logger.d("ashkan_plt: Page finished: "+url);
 		      
-		    	try {
-		    		for(int i=0;i<20;i++){
-		    			Thread.sleep(1000);
-		    		}
-			        
-			      } catch (InterruptedException e) {
-			        e.printStackTrace();
-			      }
-		        
-		      
-		      StringBuilder resourcesStr=new StringBuilder();
+		    	
+		    	new Handler(){
+		    		private WebView view;
+		    		
+		    		
+		    		public void init(WebView v){
+		    			view=v;
+		    			postDelayed(new Runnable() {
+							@Override
+							public void run() {
+								Logger.d("ashkan_plt Number of resources: "+objsTimings.size());
+								StringBuilder resourcesStr=new StringBuilder();
 
-		      for (String objTiminStr : objsTimings){
-		    	  if(AndroidWebView.this.spdyTest){
-		    		  if(AndroidWebView.this.protocol.equals(WebViewProtocol.HTTP)){
-				    	  resourcesStr.append("mobilyzer_resource|http|"+objTiminStr);
-		    		  }else{
-				    	  resourcesStr.append("mobilyzer_resource|spdy|"+objTiminStr);
-		    		  }
-		    	  }else{
-			    	  resourcesStr.append("mobilyzer_resource|http|"+objTiminStr);
-		    	  }
-		      }
-		      Intent newintent = new Intent();
-		      newintent.setAction((UpdateIntent.PLT_MEASUREMENT_ACTION)+AndroidWebView.this.startTimeFilter);
-		      newintent.putExtra(UpdateIntent.PLT_TASK_PAYLOAD_RESULT_RES, resourcesStr.toString());
-		      PhoneUtils.getGlobalContext().sendBroadcast(newintent);
-		      
-		      Logger.d("ashkan_plt: Broadcasting mobilyzer_resource results "+resourcesStr.length());
-		      
-		      String js_code = "javascript:(\n function() { \n";
-		        js_code += "            var result='';\n";
-		        js_code += "            for(var prop in performance.timing){\n";
-		        js_code += "              if(performance.timing.hasOwnProperty(prop)){\n";
-		        js_code += "                  result=prop+':'+performance.timing[prop]+'|'+result}}\n";
-		        js_code += "            console.log('mobilyzer_navigation'+result);\n";
-		        js_code += "    })()\n";
-		      view.loadUrl(js_code);
+				    		      for (String objTiminStr : objsTimings){
+				    		    	  if(AndroidWebView.this.spdyTest){
+				    		    		  if(AndroidWebView.this.protocol.equals(WebViewProtocol.HTTP)){
+				    				    	  resourcesStr.append("mobilyzer_resource|http|"+objTiminStr);
+				    		    		  }else{
+				    				    	  resourcesStr.append("mobilyzer_resource|spdy|"+objTiminStr);
+				    		    		  }
+				    		    	  }else{
+				    			    	  resourcesStr.append("mobilyzer_resource|http|"+objTiminStr);
+				    		    	  }
+				    		      }
+				    		      Intent newintent = new Intent();
+				    		      newintent.setAction((UpdateIntent.PLT_MEASUREMENT_ACTION)+AndroidWebView.this.startTimeFilter);
+				    		      newintent.putExtra(UpdateIntent.PLT_TASK_PAYLOAD_RESULT_RES, resourcesStr.toString());
+				    		      PhoneUtils.getGlobalContext().sendBroadcast(newintent);
+				    		      
+				    		      Logger.d("ashkan_plt: Broadcasting mobilyzer_resource results "+resourcesStr.length());
+				    		      
+				    		      String js_code = "javascript:(\n function() { \n";
+				    		        js_code += "            var result='';\n";
+				    		        js_code += "            for(var prop in performance.timing){\n";
+				    		        js_code += "              if(performance.timing.hasOwnProperty(prop)){\n";
+				    		        js_code += "                  result=prop+':'+performance.timing[prop]+'|'+result}}\n";
+				    		        js_code += "            console.log('mobilyzer_navigation'+result);\n";
+				    		        js_code += "    })()\n";
+				    		      view.loadUrl(js_code);
+
+								
+							}
+		    				
+		    				
+		    				
+		    			}, 20000);
+		    		}
+		    		
+		    	}.init(view);
+
+		    	
 		        
 		        super.onPageFinished(view, url);
 		        

@@ -59,7 +59,7 @@ public abstract class MeasurementTask
     measurementTypes.put(PageLoadTimeTask.TYPE, PageLoadTimeTask.class);
 //    measurementDescToType.put(PageLoadTimeTask.DESCRIPTOR, PageLoadTimeTask.TYPE);
     measurementTypes.put(VideoQoETask.TYPE, VideoQoETask.class);
-    measurementDescToType.put(VideoQoETask.DESCRIPTOR, VideoQoETask.TYPE);
+//    measurementDescToType.put(VideoQoETask.DESCRIPTOR, VideoQoETask.TYPE);
 
     // Hongyi: RRCTask is not accessible by users. So we don't put RRC descriptor
     // and type into this map

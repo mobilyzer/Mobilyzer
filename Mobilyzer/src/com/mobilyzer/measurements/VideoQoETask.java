@@ -46,18 +46,18 @@ import com.mobilyzer.util.video.util.DemoUtil;
  */
 public class VideoQoETask extends MeasurementTask {
   // Type name for internal use
-  public static final String TYPE = "video_qoe";
+  public static final String TYPE = "video";
   // Human readable name for the task
-  public static final String DESCRIPTOR = "VIDEOQOE";
+  public static final String DESCRIPTOR = "Video QoE";
 
   private boolean isSucceed = false;
   private int numFrameDropped;
   private double initialLoadingTime;
-  private ArrayList<Double> rebufferTime = new ArrayList<Double>();
-  private ArrayList<String> goodputTimestamp = new ArrayList<String>();
-  private ArrayList<Double> goodputValue = new ArrayList<Double>();
-  private ArrayList<String> bitrateTimestamp = new ArrayList<String>();
-  private ArrayList<Integer> bitrateValue = new ArrayList<Integer>();
+  private ArrayList<Double> rebufferTimes = new ArrayList<Double>();
+  private ArrayList<String> goodputTimestamps = new ArrayList<String>();
+  private ArrayList<Double> goodputValues = new ArrayList<Double>();
+  private ArrayList<String> bitrateTimestamps = new ArrayList<String>();
+  private ArrayList<Integer> bitrateValues = new ArrayList<Integer>();
   
   private boolean isResultReceived;
   private long duration;
@@ -96,9 +96,9 @@ public class VideoQoETask extends MeasurementTask {
         }
         String val = null;
 
-        this.manifestURL = params.get("manifestURL");
-        this.contentId = params.get("contentId");
-        if ((val = params.get("ABRType")) != null && Integer.parseInt(val) > 0) {
+        this.manifestURL = params.get("manifest_url");
+        this.contentId = params.get("content_id");
+        if ((val = params.get("abr_type")) != null && Integer.parseInt(val) > 0) {
           this.ABRType = Integer.parseInt(val);
         }
 
@@ -210,33 +210,33 @@ public class VideoQoETask extends MeasurementTask {
           if (intent.hasExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_REBUFFER_TIME)) {
             double[] rebufferTimeArray = intent.getDoubleArrayExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_REBUFFER_TIME);
             for (double rebuffer : rebufferTimeArray) {
-              rebufferTime.add(rebuffer);
+              rebufferTimes.add(rebuffer);
             }
-            Logger.d("Rebuffer Time: " + rebufferTime);
+            Logger.d("Rebuffer Times: " + rebufferTimes);
           }
           if (intent.hasExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_GOODPUT_TIMESTAMP)) {
             String[] goodputTimestampArray = intent.getStringArrayExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_GOODPUT_TIMESTAMP);
-            goodputTimestamp = new ArrayList<String>(Arrays.asList(goodputTimestampArray));
-            Logger.d("Goodput Timestamp: " + goodputTimestamp);
+            goodputTimestamps = new ArrayList<String>(Arrays.asList(goodputTimestampArray));
+            Logger.d("Goodput Timestamps: " + goodputTimestamps);
           }
           if (intent.hasExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_GOODPUT_VALUE)) {
             double[] goodputValueArray = intent.getDoubleArrayExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_GOODPUT_VALUE);
             for (double goodput : goodputValueArray) {
-              goodputValue.add(goodput);
+              goodputValues.add(goodput);
             }
-            Logger.d("Goodput Value: " + goodputValue);
+            Logger.d("Goodput Valuess: " + goodputValues);
           }
           if (intent.hasExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_BITRATE_TIMESTAMP)) {
             String[] bitrateTimestampArray = intent.getStringArrayExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_BITRATE_TIMESTAMP);
-            bitrateTimestamp = new ArrayList<String>(Arrays.asList(bitrateTimestampArray));
-            Logger.d("Bitrate Timestamp: " + bitrateTimestamp);
+            bitrateTimestamps = new ArrayList<String>(Arrays.asList(bitrateTimestampArray));
+            Logger.d("Bitrate Timestamps: " + bitrateTimestamps);
           }
           if (intent.hasExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_BITRATE_VALUE)) {
             int[] bitrateValueArray = intent.getIntArrayExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_BITRATE_VALUE);
             for (int bitrate : bitrateValueArray) {
-              bitrateValue.add(bitrate);
+              bitrateValues.add(bitrate);
             }
-            Logger.d("Bitrate Value: " + bitrateValue);
+            Logger.d("Bitrate Values: " + bitrateValues);
           }
           isResultReceived = true;
         }
@@ -266,14 +266,14 @@ public class VideoQoETask extends MeasurementTask {
                 phoneUtils.getDeviceProperty(this.getKey()),
                 VideoQoETask.TYPE, System.currentTimeMillis() * 1000,
                 TaskProgress.COMPLETED, this.measurementDesc);
-        result.addResult(UpdateIntent.VIDEO_TASK_PAYLOAD_IS_SUCCEED, isSucceed);
-        result.addResult(UpdateIntent.VIDEO_TASK_PAYLOAD_NUM_FRAME_DROPPED, this.numFrameDropped);
-        result.addResult(UpdateIntent.VIDEO_TASK_PAYLOAD_INITIAL_LOADING_TIME, this.initialLoadingTime);
-        result.addResult(UpdateIntent.VIDEO_TASK_PAYLOAD_REBUFFER_TIME, this.rebufferTime);
-        result.addResult(UpdateIntent.VIDEO_TASK_PAYLOAD_GOODPUT_TIMESTAMP, this.goodputTimestamp);
-        result.addResult(UpdateIntent.VIDEO_TASK_PAYLOAD_GOODPUT_VALUE, this.goodputValue);
-        result.addResult(UpdateIntent.VIDEO_TASK_PAYLOAD_BITRATE_TIMESTAMP, this.bitrateTimestamp);
-        result.addResult(UpdateIntent.VIDEO_TASK_PAYLOAD_BITRATE_VALUE, this.bitrateValue);
+//        result.addResult(UpdateIntent.VIDEO_TASK_PAYLOAD_IS_SUCCEED, isSucceed);
+        result.addResult("video_num_frame_dropped", this.numFrameDropped);
+        result.addResult("video_initial_loading_time", this.initialLoadingTime);
+        result.addResult("video_rebuffer_times", this.rebufferTimes);
+        result.addResult("video_goodput_times", this.goodputTimestamps);
+        result.addResult("video_goodput_values", this.goodputValues);
+        result.addResult("video_bitrate_times", this.bitrateTimestamps);
+        result.addResult("video_bitrate_values", this.bitrateValues);
 
         Logger.i(MeasurementJsonConvertor.toJsonString(result));
         mrArray[0]=result;
@@ -285,7 +285,7 @@ public class VideoQoETask extends MeasurementTask {
                 phoneUtils.getDeviceProperty(this.getKey()),
                 VideoQoETask.TYPE, System.currentTimeMillis() * 1000,
                 TaskProgress.FAILED, this.measurementDesc);
-        result.addResult("error", "measurement timeout");
+//        result.addResult("error", "measurement timeout");
         Logger.i(MeasurementJsonConvertor.toJsonString(result));
         mrArray[0]=result;
     }

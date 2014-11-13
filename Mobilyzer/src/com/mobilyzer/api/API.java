@@ -300,10 +300,10 @@ public final class API {
 //        task = new PageLoadTimeTask(new PageLoadTimeDesc(clientKey, startTime, endTime
 //          , intervalSec, count, priority, contextIntervalSec, params));
 //        break;
-      case VIDEOQOE:
-        task = new VideoQoETask(new VideoQoEDesc(clientKey, startTime, endTime
-          , intervalSec, count, priority, contextIntervalSec, params));
-        break;
+//      case VIDEOQOE:
+//        task = new VideoQoETask(new VideoQoEDesc(clientKey, startTime, endTime
+//          , intervalSec, count, priority, contextIntervalSec, params));
+//        break;
       default:
         throw new MeasurementError("Undefined measurement type. Candidate: " +
             "DNSLOOKUP, HTTP, PING, TRACEROUTE, TCPTHROUGHPUT, UDPBURST");

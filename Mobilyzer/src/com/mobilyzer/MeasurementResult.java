@@ -497,14 +497,14 @@ public class MeasurementResult implements Parcelable {
 
     if (taskProgress == TaskProgress.COMPLETED) {
       printer.println("");
-      printer.println(UpdateIntent.VIDEO_TASK_PAYLOAD_IS_SUCCEED + ": " + values.get(UpdateIntent.VIDEO_TASK_PAYLOAD_IS_SUCCEED));
-      printer.println(UpdateIntent.VIDEO_TASK_PAYLOAD_NUM_FRAME_DROPPED + ": " + values.get(UpdateIntent.VIDEO_TASK_PAYLOAD_NUM_FRAME_DROPPED));
-      printer.println(UpdateIntent.VIDEO_TASK_PAYLOAD_INITIAL_LOADING_TIME + ": " + values.get(UpdateIntent.VIDEO_TASK_PAYLOAD_INITIAL_LOADING_TIME));
-      printer.println(UpdateIntent.VIDEO_TASK_PAYLOAD_REBUFFER_TIME + ": " + values.get(UpdateIntent.VIDEO_TASK_PAYLOAD_REBUFFER_TIME));
-      printer.println(UpdateIntent.VIDEO_TASK_PAYLOAD_GOODPUT_TIMESTAMP + ": " + values.get(UpdateIntent.VIDEO_TASK_PAYLOAD_GOODPUT_TIMESTAMP));
-      printer.println(UpdateIntent.VIDEO_TASK_PAYLOAD_GOODPUT_VALUE + ": " + values.get(UpdateIntent.VIDEO_TASK_PAYLOAD_GOODPUT_VALUE));
-      printer.println(UpdateIntent.VIDEO_TASK_PAYLOAD_BITRATE_TIMESTAMP + ": " + values.get(UpdateIntent.VIDEO_TASK_PAYLOAD_BITRATE_TIMESTAMP));
-      printer.println(UpdateIntent.VIDEO_TASK_PAYLOAD_BITRATE_VALUE + ": " + values.get(UpdateIntent.VIDEO_TASK_PAYLOAD_BITRATE_VALUE));
+//      printer.println(UpdateIntent.VIDEO_TASK_PAYLOAD_IS_SUCCEED + ": " + values.get(UpdateIntent.VIDEO_TASK_PAYLOAD_IS_SUCCEED));
+      printer.println("Num of frame dropped" + ": " + values.get("video_num_frame_dropped"));
+      printer.println("Initial loading time" + ": " + values.get("video_initial_loading_time"));
+//      printer.println(UpdateIntent.VIDEO_TASK_PAYLOAD_REBUFFER_TIME + ": " + values.get(UpdateIntent.VIDEO_TASK_PAYLOAD_REBUFFER_TIME));
+//      printer.println(UpdateIntent.VIDEO_TASK_PAYLOAD_GOODPUT_TIMESTAMP + ": " + values.get(UpdateIntent.VIDEO_TASK_PAYLOAD_GOODPUT_TIMESTAMP));
+//      printer.println(UpdateIntent.VIDEO_TASK_PAYLOAD_GOODPUT_VALUE + ": " + values.get(UpdateIntent.VIDEO_TASK_PAYLOAD_GOODPUT_VALUE));
+//      printer.println(UpdateIntent.VIDEO_TASK_PAYLOAD_BITRATE_TIMESTAMP + ": " + values.get(UpdateIntent.VIDEO_TASK_PAYLOAD_BITRATE_TIMESTAMP));
+//      printer.println(UpdateIntent.VIDEO_TASK_PAYLOAD_BITRATE_VALUE + ": " + values.get(UpdateIntent.VIDEO_TASK_PAYLOAD_BITRATE_VALUE));
     } else if (taskProgress == TaskProgress.PAUSED) {
       printer.println("Video QoE task paused!");
     } else {
