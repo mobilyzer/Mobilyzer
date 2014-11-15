@@ -66,21 +66,25 @@ public class VideoQoETask extends MeasurementTask {
    * Parameters for Video QoE measurement
    */
   public static class VideoQoEDesc extends MeasurementDesc {
-    // The url to retrieve video manifest xml
-    public String manifestURL;
+    // The url to retrieve video
+    public String contentURL;
     // The content id for YouTube video
     public String contentId;
     // The ABR algorithm for video playback
-    public int ABRType;
+    public int contentType;
 
     public VideoQoEDesc(String key, Date startTime, Date endTime, double intervalSec,
             long count, long priority, int contextIntervalSec, Map<String, String> params) {
         super(VideoQoETask.TYPE, key, startTime, endTime, intervalSec, count, priority,
                 contextIntervalSec, params);
         initializeParams(params);
-        if (this.manifestURL == null) {
+        if (this.contentURL == null) {
             throw new InvalidParameterException("Video QoE task cannot be created"
-                    + " due to null video manifest url string");
+                    + " due to null video url string");
+        }
+        if (this.contentType != DemoUtil.TYPE_DASH_VOD && this.contentType != DemoUtil.TYPE_PROGRESSIVE) {
+          throw new InvalidParameterException("Video QoE task cannot be created"
+              + " due to invalid streaming algorithm: " + this.contentType);
         }
     }
 
@@ -96,19 +100,19 @@ public class VideoQoETask extends MeasurementTask {
         }
         String val = null;
 
-        this.manifestURL = params.get("manifest_url");
+        this.contentURL = params.get("content_url");
         this.contentId = params.get("content_id");
-        if ((val = params.get("abr_type")) != null && Integer.parseInt(val) > 0) {
-          this.ABRType = Integer.parseInt(val);
+        if ((val = params.get("content_type")) != null && Integer.parseInt(val) >= 0) {
+          this.contentType = Integer.parseInt(val);
         }
 
     }
 
     protected VideoQoEDesc(Parcel in) {
         super(in);
-        manifestURL = in.readString();
+        contentURL = in.readString();
         contentId = in.readString();
-        ABRType = in.readInt();
+        contentType = in.readInt();
     }
 
     public static final Parcelable.Creator<VideoQoEDesc> CREATOR =
@@ -125,9 +129,9 @@ public class VideoQoETask extends MeasurementTask {
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         super.writeToParcel(dest, flags);
-        dest.writeString(this.manifestURL);
+        dest.writeString(this.contentURL);
         dest.writeString(this.contentId);
-        dest.writeInt(this.ABRType);
+        dest.writeInt(this.contentType);
     }
   }
   
@@ -183,9 +187,9 @@ public class VideoQoETask extends MeasurementTask {
     VideoQoEDesc taskDesc = (VideoQoEDesc) this.measurementDesc;
 
     Intent videoIntent = new Intent(PhoneUtils.getGlobalContext(), VideoPlayerService.class);
-    videoIntent.setData(Uri.parse(taskDesc.manifestURL));
+    videoIntent.setData(Uri.parse(taskDesc.contentURL));
     videoIntent.putExtra(DemoUtil.CONTENT_ID_EXTRA, taskDesc.contentId);
-    videoIntent.putExtra(DemoUtil.CONTENT_TYPE_EXTRA, DemoUtil.TYPE_DASH_VOD);
+    videoIntent.putExtra(DemoUtil.CONTENT_TYPE_EXTRA, taskDesc.contentType);
     PhoneUtils.getGlobalContext().startService(videoIntent);
 
 

@@ -18,6 +18,7 @@ package com.mobilyzer.util.video;
 import com.mobilyzer.UpdateIntent;
 import com.mobilyzer.util.Logger;
 import com.mobilyzer.util.video.player.DashVodRendererBuilder;
+import com.mobilyzer.util.video.player.DefaultRendererBuilder;
 import com.mobilyzer.util.video.player.DemoPlayer;
 import com.mobilyzer.util.video.player.DemoPlayer.RendererBuilder;
 import com.mobilyzer.util.video.util.DemoUtil;
@@ -64,7 +65,7 @@ public class VideoPlayerService extends Service implements //SurfaceHolder.Callb
   public int onStartCommand(Intent intent, int flags, int startId){
     Logger.i("Video Player service started!");
     contentUri = intent.getData();
-    contentType = intent.getIntExtra(DemoUtil.CONTENT_TYPE_EXTRA, DemoUtil.TYPE_OTHER);
+    contentType = intent.getIntExtra(DemoUtil.CONTENT_TYPE_EXTRA, DemoUtil.TYPE_PROGRESSIVE);
     contentId = intent.getStringExtra(DemoUtil.CONTENT_ID_EXTRA);
     
     this.isResultSent = false;
@@ -85,8 +86,16 @@ public class VideoPlayerService extends Service implements //SurfaceHolder.Callb
 
   private RendererBuilder getRendererBuilder() {
     String userAgent = DemoUtil.getUserAgent(this);
-    return new DashVodRendererBuilder(userAgent, contentUri.toString(), contentId,
-        new WidevineTestMediaDrmCallback(contentId), null);
+    if (this.contentType == DemoUtil.TYPE_DASH_VOD) {
+      return new DashVodRendererBuilder(userAgent, contentUri.toString(), contentId,
+          new WidevineTestMediaDrmCallback(contentId), null);
+    }
+    else if (this.contentType == DemoUtil.TYPE_PROGRESSIVE) {
+      return new DefaultRendererBuilder(this, contentUri, null);
+    }
+    else {
+      return null;
+    }
   }
 
   private void preparePlayer() {

@@ -491,7 +491,7 @@ public class MeasurementResult implements Parcelable {
     VideoQoEDesc desc = (VideoQoEDesc) parameters;
     printer.println("[Video QoE Measurement]");
     printer.println("Content ID: " + desc.contentId);
-    printer.println("ABR Algorithm: " + desc.ABRType);
+    printer.println("Streaming Algorithm: " + desc.contentType);
     printer.println("Timestamp: " + Util.getTimeStringFromMicrosecond(properties.timestamp));
     printIPTestResult(printer);
 
