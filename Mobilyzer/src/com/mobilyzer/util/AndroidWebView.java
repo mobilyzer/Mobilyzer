@@ -37,8 +37,6 @@ public class AndroidWebView extends WebView {
 		SPDY, HTTP
 	}
 	
-	private static String USER_AGENT="Mozilla/5.0 (Linux; U; Android 4.3; en-us; SCH-I535 Build/JSS15J) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30";
-	
 	OkHttpClient client;
 	boolean spdyTest;
 	long startTimeFilter;
@@ -63,7 +61,6 @@ public class AndroidWebView extends WebView {
 		getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
 		getSettings().setAppCacheEnabled(false);
 		getSettings().setJavaScriptEnabled(true);
-		getSettings().setUserAgentString(USER_AGENT);
 		context.deleteDatabase("webview.db");
 		context.deleteDatabase("webviewCache.db");
 		clearHistory();
@@ -79,8 +76,7 @@ public class AndroidWebView extends WebView {
 		
 		if(spdyTest){
 			if(protocol.equals(WebViewProtocol.HTTP)){
-//				client.setProtocols(Util.immutableList(Protocol.HTTP_1_1));
-				client.setProtocols(Util.immutableList(Protocol.SPDY_3, Protocol.HTTP_1_1));
+				client.setProtocols(Util.immutableList(Protocol.HTTP_1_1));
 			}else{
 				client.setProtocols(Util.immutableList(Protocol.SPDY_3, Protocol.HTTP_1_1));
 			}
@@ -134,10 +130,7 @@ public class AndroidWebView extends WebView {
 		    	Logger.d("ashkan_plt: Page finished: "+url);
 		      
 		    	try {
-		    		for(int i=0;i<20;i++){
-		    			Thread.sleep(1000);
-		    		}
-			        
+			        Thread.sleep(20000);
 			      } catch (InterruptedException e) {
 			        e.printStackTrace();
 			      }
@@ -181,7 +174,7 @@ public class AndroidWebView extends WebView {
 		      
 		      @Override
 		      public WebResourceResponse shouldInterceptRequest(WebView view, String urlStr) {
-		    	  
+		    	  Logger.d("shouldInterceptRequest: "+urlStr);
 		    	  long relStartTime;
 		    	  if(urlStr.equals(AndroidWebView.this.url)){
 		    		  pageStartLoading=System.currentTimeMillis();
@@ -189,15 +182,60 @@ public class AndroidWebView extends WebView {
 		    	  }else{
 		    		  relStartTime=System.currentTimeMillis()-pageStartLoading;
 		    	  }
-		    	  Logger.d("ashkan_plt: shouldInterceptRequest: "+urlStr+" "+relStartTime);
-		    	  
 		    	  
 		    	  if (urlStr == null || urlStr.trim().equals("") || !(urlStr.startsWith("http") && !urlStr.startsWith("www"))|| urlStr.contains("|")){
 		    		  return super.shouldInterceptRequest(view, urlStr);
 		    	  }
 		    	  
-		    	  (new Thread(new ClientRunnable(urlStr,relStartTime))).start();
-		    	  
+		    	 try {
+		    		Request request = new Request.Builder()
+		    		.url(urlStr)
+		    		.header("User-Agent", "Mozilla/5.0 (Linux; U; Android 4.3; en-us; SCH-I535 Build/JSS15J) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30")
+		    		.build();
+		    		
+		    		
+		    		long startTime=System.currentTimeMillis();
+					Response response = client.newCall(request).execute();
+					InputStream is= response.body().byteStream();
+					ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			    	int red = 0;
+			    	byte[] buf = new byte[1024];
+			    	while ((red = is.read(buf)) != -1) {
+			    		totalByte+=red;
+			    	    baos.write(buf, 0, red);
+			    	}
+			    	long endTime=System.currentTimeMillis();
+			    	baos.flush();
+					
+					Logger.d("ashkan_plt: HTTP: "+client.getConnectionPool().getHttpConnectionCount()+" SPDY: "+client.getConnectionPool().getSpdyConnectionCount());
+
+					
+					String header=response.header("Content-Type");
+					String mimeType = "";
+				    String encoding = "";
+				    
+				    final int semicolonIndex = header.indexOf(';');
+			    	if (semicolonIndex != -1) {
+			    		mimeType = header.substring(0, semicolonIndex).trim();
+			    		encoding = header.substring(semicolonIndex + 1).trim();
+
+			    		final int equalsIndex = encoding.indexOf('=');
+			    		if (equalsIndex != -1)
+			    			encoding = encoding.substring(equalsIndex + 1).trim();
+			    	} else{
+			    		mimeType = header;
+			    	}
+			    	
+			    	
+			    	
+			    	objsTimings.add(urlStr+"::"+relStartTime+"::"+(endTime-startTime));
+			    	InputStream newIs = new ByteArrayInputStream(baos.toByteArray());
+			    	return new WebResourceResponse(mimeType, encoding, newIs);
+			    
+					
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 		    	  return super.shouldInterceptRequest(view, urlStr);
 		      }
 		      
@@ -242,55 +280,6 @@ public class AndroidWebView extends WebView {
 	
 	public void loadUrl() {
 		super.loadUrl(this.url);
-	}
-	
-		
-	class ClientRunnable implements Runnable{
-		
-		private String url;
-		private long relStartTime;
-		
-		
-		public ClientRunnable(String url, long relStartTime) {
-			this.url=url;
-			this.relStartTime=relStartTime;
-		}
-
-		@Override
-		public void run() {
-	    	 try {
-	    		Request request = new Request.Builder()
-	    		.url(url)
-	    		.header("User-Agent", USER_AGENT)
-	    		.build();
-	    		
-	    		
-	    		long startTime=System.currentTimeMillis();
-				Response response = client.newCall(request).execute();
-				InputStream is= response.body().byteStream();
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		    	int red = 0;
-		    	byte[] buf = new byte[1024];
-		    	while ((red = is.read(buf)) != -1) {
-		    		totalByte+=red;
-		    	    baos.write(buf, 0, red);
-		    	}
-		    	long endTime=System.currentTimeMillis();
-		    	baos.flush();
-				
-				Logger.d("ashkan_plt: HTTP: "+client.getConnectionPool().getHttpConnectionCount()+" SPDY: "+client.getConnectionPool().getSpdyConnectionCount());
-		    	
-		    	
-		    	objsTimings.add(url+"::"+relStartTime+"::"+(endTime-startTime));
-		    
-				
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-
-			
-		}
-		
 	}
 
 }
