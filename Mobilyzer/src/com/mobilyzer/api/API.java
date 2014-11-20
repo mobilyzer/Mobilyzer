@@ -39,8 +39,6 @@ import com.mobilyzer.UpdateIntent;
 import com.mobilyzer.exceptions.MeasurementError;
 import com.mobilyzer.measurements.DnsLookupTask;
 import com.mobilyzer.measurements.HttpTask;
-import com.mobilyzer.measurements.PageLoadTimeTask;
-import com.mobilyzer.measurements.PageLoadTimeTask.PageLoadTimeDesc;
 import com.mobilyzer.measurements.ParallelTask;
 import com.mobilyzer.measurements.PingTask;
 import com.mobilyzer.measurements.SequentialTask;

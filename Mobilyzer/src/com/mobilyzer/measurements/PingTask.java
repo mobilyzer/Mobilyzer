@@ -59,6 +59,7 @@ public class PingTask extends MeasurementTask{
    * 64-byte ICMP packet */
   public static final int DEFAULT_PING_PACKET_SIZE = 56;
   public static final int DEFAULT_PING_TIMEOUT = 10;
+  public static final int DEFAULT_PING_TTL = 51;
 
   private long duration;
 
@@ -82,6 +83,7 @@ public class PingTask extends MeasurementTask{
     // The payload size in bytes of the ICMP packet    
     public int packetSizeByte = PingTask.DEFAULT_PING_PACKET_SIZE;  
     public int pingTimeoutSec = PingTask.DEFAULT_PING_TIMEOUT;
+    public int pingTimeToLive= PingTask.DEFAULT_PING_TTL;
 
 
     public PingDesc(String key, Date startTime,
@@ -114,6 +116,10 @@ public class PingTask extends MeasurementTask{
             Integer.parseInt(val) > 0) {
           this.pingTimeoutSec = Integer.parseInt(val);  
         }
+        if ((val = params.get("ttl")) != null && val.length() > 0 &&
+        		Integer.parseInt(val) > 0) {
+        	this.pingTimeToLive = Integer.parseInt(val);  
+        }
       } catch (NumberFormatException e) {
         throw new InvalidParameterException("PingTask cannot be created due to invalid params");
       }
@@ -130,6 +136,7 @@ public class PingTask extends MeasurementTask{
       target = in.readString();
       packetSizeByte = in.readInt();
       pingTimeoutSec = in.readInt();
+      pingTimeToLive = in.readInt();
     }
 
     public static final Parcelable.Creator<PingDesc> CREATOR
@@ -150,6 +157,7 @@ public class PingTask extends MeasurementTask{
       dest.writeString(target);
       dest.writeInt(packetSizeByte);
       dest.writeInt(pingTimeoutSec);
+      dest.writeInt(pingTimeToLive);
     }
   }
 
@@ -353,7 +361,7 @@ public class PingTask extends MeasurementTask{
       String command = Util.constructCommand(pingTask.pingExe, "-i", 
         Config.DEFAULT_INTERVAL_BETWEEN_ICMP_PACKET_SEC,
         "-s", pingTask.packetSizeByte, "-w", pingTask.pingTimeoutSec, "-c", 
-        Config.PING_COUNT_PER_MEASUREMENT, targetIp);
+        Config.PING_COUNT_PER_MEASUREMENT, "-t" ,pingTask.pingTimeToLive, targetIp);
       Logger.i("Running: " + command);
       pingProc = Runtime.getRuntime().exec(command);
       
