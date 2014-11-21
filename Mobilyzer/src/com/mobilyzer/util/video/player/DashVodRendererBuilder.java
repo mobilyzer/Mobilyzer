@@ -31,6 +31,7 @@ import com.google.android.exoplayer.chunk.ChunkSource;
 import com.google.android.exoplayer.chunk.Format;
 import com.google.android.exoplayer.chunk.FormatEvaluator;
 import com.google.android.exoplayer.chunk.FormatEvaluator.AdaptiveEvaluator;
+import com.google.android.exoplayer.chunk.FormatEvaluator.BufferBasedAdaptiveEvaluator;
 import com.google.android.exoplayer.chunk.MultiTrackChunkSource;
 import com.google.android.exoplayer.dash.DashChunkSource;
 import com.google.android.exoplayer.dash.mpd.AdaptationSet;
@@ -67,13 +68,18 @@ public class DashVodRendererBuilder implements RendererBuilder,
 
   private static final int BUFFER_SEGMENT_SIZE = 64 * 1024;
 //  private static final int VIDEO_BUFFER_SEGMENTS = 200;
-  private static final int VIDEO_BUFFER_SEGMENTS = 800;
+  private static final int VIDEO_BUFFER_SEGMENTS = 1000;
   private static final int AUDIO_BUFFER_SEGMENTS = 60;
 
   private static final int SECURITY_LEVEL_UNKNOWN = -1;
   private static final int SECURITY_LEVEL_1 = 1;
   private static final int SECURITY_LEVEL_3 = 3;
 
+  
+  public enum AdaptiveType{
+    BBA, CBA
+  };
+  
   private final String userAgent;
   private final String url;
   private final String contentId;
@@ -83,13 +89,16 @@ public class DashVodRendererBuilder implements RendererBuilder,
   private DemoPlayer player;
   private RendererBuilderCallback callback;
 
+  private AdaptiveType adaptiveType;
+  
   public DashVodRendererBuilder(String userAgent, String url, String contentId,
-      MediaDrmCallback drmCallback, TextView debugTextView) {
+      MediaDrmCallback drmCallback, TextView debugTextView, AdaptiveType adaptiveType) {
     this.userAgent = userAgent;
     this.url = url;
     this.contentId = contentId;
     this.drmCallback = drmCallback;
     this.debugTextView = debugTextView;
+    this.adaptiveType=adaptiveType;
   }
 
   @Override
@@ -180,8 +189,13 @@ public class DashVodRendererBuilder implements RendererBuilder,
     if (mimeType.equals(MimeTypes.VIDEO_MP4) || mimeType.equals(MimeTypes.VIDEO_WEBM)) {
 //      videoChunkSource = new DashChunkSource(videoDataSource,
 //          new AdaptiveEvaluator(bandwidthMeter), videoRepresentations);
-      videoChunkSource = new DashChunkSource(videoDataSource,
+      if (adaptiveType==AdaptiveType.CBA){
+        videoChunkSource = new DashChunkSource(videoDataSource,
           new AdaptiveEvaluator(videoBandwidthMeter), videoRepresentations);
+      }else{
+        videoChunkSource = new DashChunkSource(videoDataSource,
+          new BufferBasedAdaptiveEvaluator(videoBandwidthMeter, manifest.duration), videoRepresentations);
+      }
     } else {
       throw new IllegalStateException("Unexpected mime type: " + mimeType);
     }

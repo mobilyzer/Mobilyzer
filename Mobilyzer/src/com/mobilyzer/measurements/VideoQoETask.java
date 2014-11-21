@@ -82,7 +82,7 @@ public class VideoQoETask extends MeasurementTask {
             throw new InvalidParameterException("Video QoE task cannot be created"
                     + " due to null video url string");
         }
-        if (this.contentType != DemoUtil.TYPE_DASH_VOD && this.contentType != DemoUtil.TYPE_PROGRESSIVE) {
+        if (this.contentType != DemoUtil.TYPE_DASH_VOD && this.contentType != DemoUtil.TYPE_PROGRESSIVE && this.contentType != DemoUtil.TYPE_BBA ) {
           throw new InvalidParameterException("Video QoE task cannot be created"
               + " due to invalid streaming algorithm: " + this.contentType);
         }

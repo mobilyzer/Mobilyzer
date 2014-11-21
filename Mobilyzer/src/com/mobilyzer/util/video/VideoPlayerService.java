@@ -20,10 +20,11 @@ import com.mobilyzer.util.Logger;
 import com.mobilyzer.util.video.player.DashVodRendererBuilder;
 import com.mobilyzer.util.video.player.DefaultRendererBuilder;
 import com.mobilyzer.util.video.player.DemoPlayer;
+import com.mobilyzer.util.video.player.DashVodRendererBuilder.AdaptiveType;
 import com.mobilyzer.util.video.player.DemoPlayer.RendererBuilder;
 import com.mobilyzer.util.video.util.DemoUtil;
-
 import com.google.android.exoplayer.ExoPlayer;
+
 import android.app.Service;
 import android.content.Intent;
 import android.graphics.SurfaceTexture;
@@ -88,7 +89,11 @@ public class VideoPlayerService extends Service implements //SurfaceHolder.Callb
     String userAgent = DemoUtil.getUserAgent(this);
     if (this.contentType == DemoUtil.TYPE_DASH_VOD) {
       return new DashVodRendererBuilder(userAgent, contentUri.toString(), contentId,
-          new WidevineTestMediaDrmCallback(contentId), null);
+          new WidevineTestMediaDrmCallback(contentId), null, AdaptiveType.CBA );
+    }
+    else if (this.contentType == DemoUtil.TYPE_BBA){
+      return new DashVodRendererBuilder(userAgent, contentUri.toString(), contentId,
+        new WidevineTestMediaDrmCallback(contentId), null, AdaptiveType.BBA);
     }
     else if (this.contentType == DemoUtil.TYPE_PROGRESSIVE) {
       return new DefaultRendererBuilder(this, contentUri, null);
