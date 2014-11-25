@@ -58,6 +58,8 @@ public class VideoQoETask extends MeasurementTask {
   private ArrayList<Double> goodputValues = new ArrayList<Double>();
   private ArrayList<String> bitrateTimestamps = new ArrayList<String>();
   private ArrayList<Integer> bitrateValues = new ArrayList<Integer>();
+  private long bbaSwitchTime;
+  private long dataConsumed;
   
   private boolean isResultReceived;
   private long duration;
@@ -142,6 +144,8 @@ public class VideoQoETask extends MeasurementTask {
   public VideoQoETask(MeasurementDesc desc) {
     super(new VideoQoEDesc(desc.key, desc.startTime, desc.endTime, desc.intervalSec,
         desc.count, desc.priority, desc.contextIntervalSec, desc.parameters));
+    bbaSwitchTime=-1;
+    dataConsumed=0;
   }
   
   protected VideoQoETask(Parcel in) {
@@ -242,6 +246,13 @@ public class VideoQoETask extends MeasurementTask {
             }
             Logger.d("Bitrate Values: " + bitrateValues);
           }
+          if (intent.hasExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_BBA_SWITCH_TIME)){
+            bbaSwitchTime=intent.getLongExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_BBA_SWITCH_TIME, -1);
+          }
+          if (intent.hasExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_BYTE_USED)){
+            dataConsumed=intent.getLongExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_BYTE_USED, 0);
+            Logger.d("Data consumed: " + dataConsumed);
+          }
           isResultReceived = true;
         }
     };
@@ -278,6 +289,9 @@ public class VideoQoETask extends MeasurementTask {
         result.addResult("video_goodput_values", this.goodputValues);
         result.addResult("video_bitrate_times", this.bitrateTimestamps);
         result.addResult("video_bitrate_values", this.bitrateValues);
+        if(this.bbaSwitchTime!=-1){
+          result.addResult("video_bba_switch_time", this.bbaSwitchTime);
+        }
 
         Logger.i(MeasurementJsonConvertor.toJsonString(result));
         mrArray[0]=result;
@@ -359,8 +373,7 @@ public class VideoQoETask extends MeasurementTask {
    */
   @Override
   public long getDataConsumed() {
-    // TODO Auto-generated method stub
-    return 0;
+    return dataConsumed;
   }
 
 }

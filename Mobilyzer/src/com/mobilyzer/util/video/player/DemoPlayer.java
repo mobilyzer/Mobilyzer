@@ -29,6 +29,8 @@ import com.google.android.exoplayer.drm.StreamingDrmSessionManager;
 import com.google.android.exoplayer.text.TextTrackRenderer;
 import com.google.android.exoplayer.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer.util.PlayerControl;
+import com.google.android.exoplayer.chunk.FormatEvaluator.BufferBasedAdaptiveEvaluator;
+import com.google.android.exoplayer.chunk.FormatEvaluator.AdaptiveEvaluator;
 
 import android.media.MediaCodec.CryptoException;
 import android.os.Handler;
@@ -46,7 +48,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class DemoPlayer implements ExoPlayer.Listener, ChunkSampleSource.EventListener,
     DefaultBandwidthMeter.EventListener, MediaCodecVideoTrackRenderer.EventListener,
     MediaCodecAudioTrackRenderer.EventListener, TextTrackRenderer.TextRenderer,
-    StreamingDrmSessionManager.EventListener {
+    StreamingDrmSessionManager.EventListener, BufferBasedAdaptiveEvaluator.EventListener,
+    AdaptiveEvaluator.EventListener{
 
   /**
    * Builds renderers for the player.
@@ -126,6 +129,8 @@ public class DemoPlayer implements ExoPlayer.Listener, ChunkSampleSource.EventLi
     void onLoadStarted(int sourceId, String formatId, int trigger, boolean isInitialization,
         int mediaStartTimeMs, int mediaEndTimeMs, long length);
     void onLoadCompleted(int sourceId, long bytesLoaded);
+    void onSwitchToSteadyState(long elapsedMs);
+    void onAllChunksDownloaded(long totalBytes);
   }
 
   /**
@@ -577,6 +582,22 @@ public class DemoPlayer implements ExoPlayer.Listener, ChunkSampleSource.EventLi
       }
     }
 
+  }
+
+  @Override
+  public void onSwitchToSteadyState(long elapsedMs) {
+    if (infoListener != null) {
+      infoListener.onSwitchToSteadyState(elapsedMs);
+    }
+    
+  }
+
+  @Override
+  public void onAllChunksDownloaded(long totalBytes) {
+    if (infoListener != null) {
+      infoListener.onAllChunksDownloaded(totalBytes);
+    }
+    
   }
 
 }

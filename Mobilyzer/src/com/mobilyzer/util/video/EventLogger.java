@@ -17,7 +17,6 @@ package com.mobilyzer.util.video;
 
 import com.mobilyzer.UpdateIntent;
 import com.mobilyzer.util.video.player.DemoPlayer;
-
 import com.google.android.exoplayer.ExoPlayer;
 import com.google.android.exoplayer.MediaCodecAudioTrackRenderer.AudioTrackInitializationException;
 import com.google.android.exoplayer.MediaCodecTrackRenderer.DecoderInitializationException;
@@ -53,6 +52,8 @@ public class EventLogger implements DemoPlayer.Listener, DemoPlayer.InfoListener
   private ArrayList<Pair<String, Double>> audioGoodput;
   private int previousVideoBitrate;
   private int previousAudioBitrate;
+  private long switchToSteadyStateTime;
+  private long totalBytesDownloaded;
   
   private double initialLoadingTime_s;
   private int bufferCounter = 0;
@@ -82,6 +83,8 @@ public class EventLogger implements DemoPlayer.Listener, DemoPlayer.InfoListener
     this.previousVideoBitrate = 0;
     this.audioBitrateVarience.add(Pair.create("0.00", 0));
     this.previousAudioBitrate = 0;
+    this.switchToSteadyStateTime = -1;
+    this.totalBytesDownloaded = 0;
   }
   
   public void startSession() {
@@ -134,18 +137,26 @@ public class EventLogger implements DemoPlayer.Listener, DemoPlayer.InfoListener
 //    Log.e("", "Bitrate: " + displayBitrate(this.bitrateVarience));
 //    Log.e("", "Initial Loading Time: " + this.initialLoadingTime);
 //    Log.e("", "Rebuffering: " + this.rebufferTime);
-    Log.e("", "" + this.dropFrameTime.size());
-    Log.e("", "" + displayGoodPut(this.videoGoodput));
-    Log.e("", "" + displayBitrate(this.videoBitrateVarience));
-    Log.e("", "" + this.initialLoadingTime);
-    Log.e("", "" + this.rebufferTime);
-    Log.e("", "" + displayGoodPut(this.audioGoodput));
-    Log.e("", "" + displayBitrate(this.audioBitrateVarience));
+    Log.e("ashkan_video", "" + this.dropFrameTime.size());
+    Log.e("ashkan_video", "" + displayGoodPut(this.videoGoodput));
+    Log.e("ashkan_video", "" + displayBitrate(this.videoBitrateVarience));
+    Log.e("ashkan_video", "" + this.initialLoadingTime);
+    Log.e("ashkan_video", "" + this.rebufferTime);
+    Log.e("ashkan_video", "" + displayGoodPut(this.audioGoodput));
+    Log.e("ashkan_video", "" + displayBitrate(this.audioBitrateVarience));
+    Log.e("ashkan_video", "bba switch time " +this.switchToSteadyStateTime );
+    Log.e("ashkan_video", "total bytes downloaded " +this.totalBytesDownloaded );
     
     Intent videoQoEResult = new Intent();
     videoQoEResult.setAction(UpdateIntent.VIDEO_MEASUREMENT_ACTION);
     videoQoEResult.putExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_NUM_FRAME_DROPPED, this.dropFrameTime.size());
     videoQoEResult.putExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_INITIAL_LOADING_TIME, this.initialLoadingTime);
+    if(this.switchToSteadyStateTime!=-1){
+      videoQoEResult.putExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_BBA_SWITCH_TIME, this.switchToSteadyStateTime);
+    }
+    if(this.totalBytesDownloaded!=0){
+      videoQoEResult.putExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_BYTE_USED, this.totalBytesDownloaded);
+    }
     double[] rebufferTimeArray = new double[this.rebufferTime.size()];
     int counter = 0;
     for (Double rebufferSample : this.rebufferTime) {
@@ -337,6 +348,16 @@ public class EventLogger implements DemoPlayer.Listener, DemoPlayer.InfoListener
 
   private String getTimeString(long timeMs) {
     return TIME_FORMAT.format((timeMs) / 1000f);
+  }
+
+  @Override
+  public void onSwitchToSteadyState(long elapsedMs) {
+    this.switchToSteadyStateTime=elapsedMs;
+  }
+
+  @Override
+  public void onAllChunksDownloaded(long totalBytes) {
+    this.totalBytesDownloaded=totalBytes;
   }
 
 }

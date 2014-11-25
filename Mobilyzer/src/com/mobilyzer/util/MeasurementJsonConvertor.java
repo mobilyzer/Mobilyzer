@@ -80,7 +80,6 @@ public class MeasurementJsonConvertor {
       Class descClass = (Class) getDescMethod.invoke(null, (Object[]) null);
       MeasurementDesc measurementDesc =
           (MeasurementDesc) gson.fromJson(json.toString(), descClass);
-      
       Object cstParam = measurementDesc;
       Constructor<MeasurementTask> constructor = 
           taskClass.getConstructor(MeasurementDesc.class);

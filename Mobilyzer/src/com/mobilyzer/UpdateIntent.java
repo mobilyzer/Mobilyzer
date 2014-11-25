@@ -39,7 +39,8 @@ public class UpdateIntent extends Intent {
   public static final String VIDEO_TASK_PAYLOAD_BITRATE_VALUE = "VIDEO_TASK_PAYLOAD_BITRATE_VALUE";
   public static final String VIDEO_TASK_PAYLOAD_INITIAL_LOADING_TIME = "VIDEO_TASK_PAYLOAD_INITIAL_LOADING_TIME";
   public static final String VIDEO_TASK_PAYLOAD_REBUFFER_TIME = "VIDEO_TASK_PAYLOAD_REBUFFER_TIME";
-  
+  public static final String VIDEO_TASK_PAYLOAD_BBA_SWITCH_TIME = "VIDEO_TASK_PAYLOAD_BBA_SWITCH_TIME";
+  public static final String VIDEO_TASK_PAYLOAD_BYTE_USED = "VIDEO_TASK_PAYLOAD_BYTE_USED";
   
   // Different types of actions that this intent can represent:
   private static final String PACKAGE_PREFIX =

@@ -191,10 +191,10 @@ public class DashVodRendererBuilder implements RendererBuilder,
 //          new AdaptiveEvaluator(bandwidthMeter), videoRepresentations);
       if (adaptiveType==AdaptiveType.CBA){
         videoChunkSource = new DashChunkSource(videoDataSource,
-          new AdaptiveEvaluator(videoBandwidthMeter), videoRepresentations);
+          new AdaptiveEvaluator(videoBandwidthMeter, manifest.duration,mainHandler, player), videoRepresentations);
       }else{
         videoChunkSource = new DashChunkSource(videoDataSource,
-          new BufferBasedAdaptiveEvaluator(videoBandwidthMeter, manifest.duration), videoRepresentations);
+          new BufferBasedAdaptiveEvaluator(videoBandwidthMeter, manifest.duration, mainHandler, player ), videoRepresentations);
       }
     } else {
       throw new IllegalStateException("Unexpected mime type: " + mimeType);
