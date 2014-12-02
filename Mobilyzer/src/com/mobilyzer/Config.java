@@ -77,7 +77,7 @@ public interface Config {
   public static final int DEFAULT_HTTP_TASK_DURATION = 0;
   public static final int DEFAULT_PING_TASK_DURATION = PING_COUNT_PER_MEASUREMENT * 500;
   public static final int DEFAULT_UDPBURST_DURATION = 30 * 1000;
-  public static final int DEFAULT_PARALLEL_TASK_DURATION = 60 * 1000;
+  public static final int DEFAULT_PARALLEL_TASK_DURATION = 10 * 60 * 1000;
   public static final int DEFAULT_TASK_DURATION_TIMEOUT = 60 * 1000;
   public static final int DEFAULT_RRC_TASK_DURATION = 30 * 60 * 1000;
   public static final int MAX_TASK_DURATION = 15 * 60 * 1000;//TODO

@@ -44,6 +44,7 @@ public class DemoUtil {
   public static final String CONTENT_URL_EXTRA = "content_url";
   public static final String CONTENT_TYPE_EXTRA = "content_type";
   public static final String CONTENT_ID_EXTRA = "content_id";
+  public static final String START_TIME_FILTER = "start_time_filter";
 
   public static final int TYPE_DASH_VOD = 0;
   public static final int TYPE_BBA = 1;

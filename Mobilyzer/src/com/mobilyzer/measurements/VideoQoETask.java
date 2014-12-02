@@ -45,6 +45,7 @@ import com.mobilyzer.util.video.util.DemoUtil;
  * Measure the user-perceived Video QoE metrics by playing YouTube video in the background
  */
 public class VideoQoETask extends MeasurementTask {
+  public static int counter = 0;
   // Type name for internal use
   public static final String TYPE = "video";
   // Human readable name for the task
@@ -63,6 +64,8 @@ public class VideoQoETask extends MeasurementTask {
   
   private boolean isResultReceived;
   private long duration;
+  
+  private long startTimeFilter;
   /**
    * @author laoyao
    * Parameters for Video QoE measurement
@@ -146,10 +149,17 @@ public class VideoQoETask extends MeasurementTask {
         desc.count, desc.priority, desc.contextIntervalSec, desc.parameters));
     bbaSwitchTime=-1;
     dataConsumed=0;
+//    this.startTimeFilter = System.currentTimeMillis() + VideoQoETask.counter;
+    this.startTimeFilter = VideoQoETask.counter;
+    VideoQoETask.counter++;
+    
   }
   
   protected VideoQoETask(Parcel in) {
     super(in);
+//    this.bbaSwitchTime = in.readLong();
+//    this.dataConsumed = in.readLong();
+//    this.startTimeFilter = in.readLong();
   }
 
   public static final Parcelable.Creator<VideoQoETask> CREATOR =
@@ -166,6 +176,9 @@ public class VideoQoETask extends MeasurementTask {
   @Override
   public void writeToParcel(Parcel dest, int flags) {
     super.writeToParcel(dest, flags);
+//    dest.writeLong(this.bbaSwitchTime);
+//    dest.writeLong(this.dataConsumed);
+//    dest.writeLong(this.startTimeFilter);
   }
 
   /* (non-Javadoc)
@@ -194,11 +207,12 @@ public class VideoQoETask extends MeasurementTask {
     videoIntent.setData(Uri.parse(taskDesc.contentURL));
     videoIntent.putExtra(DemoUtil.CONTENT_ID_EXTRA, taskDesc.contentId);
     videoIntent.putExtra(DemoUtil.CONTENT_TYPE_EXTRA, taskDesc.contentType);
+    videoIntent.putExtra(DemoUtil.START_TIME_FILTER, this.startTimeFilter);
     PhoneUtils.getGlobalContext().startService(videoIntent);
 
 
     IntentFilter filter = new IntentFilter();
-    filter.addAction(UpdateIntent.VIDEO_MEASUREMENT_ACTION);
+    filter.addAction(UpdateIntent.VIDEO_MEASUREMENT_ACTION + this.startTimeFilter);
     BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
