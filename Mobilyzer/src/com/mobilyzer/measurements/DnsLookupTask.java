@@ -30,6 +30,7 @@ import com.mobilyzer.MeasurementResult;
 import com.mobilyzer.MeasurementTask;
 import com.mobilyzer.MeasurementResult.TaskProgress;
 import com.mobilyzer.exceptions.MeasurementError;
+import com.mobilyzer.util.ContextMonitor;
 import com.mobilyzer.util.Logger;
 import com.mobilyzer.util.MeasurementJsonConvertor;
 import com.mobilyzer.util.PhoneUtils;
@@ -188,6 +189,7 @@ public class DnsLookupTask extends MeasurementTask{
       Logger.i(MeasurementJsonConvertor.toJsonString(result));
       MeasurementResult[] mrArray= new MeasurementResult[1];
       mrArray[0]=result;
+      ContextMonitor.getContextMonitor().updateMeasurementResultContext(mrArray);
       return mrArray;
 
     } else {

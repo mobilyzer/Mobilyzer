@@ -39,6 +39,7 @@ import com.mobilyzer.MeasurementTask;
 import com.mobilyzer.PreemptibleMeasurementTask;
 import com.mobilyzer.MeasurementResult.TaskProgress;
 import com.mobilyzer.exceptions.MeasurementError;
+import com.mobilyzer.util.ContextMonitor;
 import com.mobilyzer.util.Logger;
 import com.mobilyzer.util.MeasurementJsonConvertor;
 import com.mobilyzer.util.PhoneUtils;
@@ -402,6 +403,7 @@ public class TracerouteTask extends MeasurementTask
             Logger.i(MeasurementJsonConvertor.toJsonString(result));
             MeasurementResult[] mrArray= new MeasurementResult[1];
             mrArray[0]=result;
+            ContextMonitor.getContextMonitor().updateMeasurementResultContext(mrArray);
             return mrArray;
           } else {
             // Otherwise, we aggregate various hosts at a given hop distance for printout
@@ -434,6 +436,7 @@ public class TracerouteTask extends MeasurementTask
       Logger.i(MeasurementJsonConvertor.toJsonString(result));
       MeasurementResult[] mrArray= new MeasurementResult[1];
       mrArray[0]=result;
+      ContextMonitor.getContextMonitor().updateMeasurementResultContext(mrArray);
       return mrArray;
 
     }else if(stopFlag){
@@ -447,6 +450,7 @@ public class TracerouteTask extends MeasurementTask
       MeasurementResult[] mrArray = MeasurementResult.getFailureResult(this,
         new MeasurementError("cancelled"));
       Logger.i(MeasurementJsonConvertor.toJsonString(mrArray[0]));
+      ContextMonitor.getContextMonitor().updateMeasurementResultContext(mrArray);
       return mrArray;
     }
 

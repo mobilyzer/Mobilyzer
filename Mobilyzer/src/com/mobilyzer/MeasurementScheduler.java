@@ -232,7 +232,6 @@ public class MeasurementScheduler extends Service {
             Parcelable[] results = intent.getParcelableArrayExtra(UpdateIntent.RESULT_PAYLOAD);
             if (results != null) {
               sendResultToClient(results, priority, taskKey, taskid);
-
               for (Object obj : results) {
                 try {
                   MeasurementResult result = (MeasurementResult) obj;

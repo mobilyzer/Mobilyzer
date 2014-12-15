@@ -11,6 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import com.mobilyzer.Config;
+import com.mobilyzer.MeasurementResult;
 import com.mobilyzer.MeasurementScheduler;
 import com.mobilyzer.MeasurementTask;
 import com.mobilyzer.UpdateIntent;
@@ -23,6 +24,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.os.Messenger;
+import android.os.Parcelable;
 import android.os.RemoteException;
 import android.util.Log;
 
@@ -103,6 +105,27 @@ public class ContextMonitor {
 		msg.sendToTarget();
 	}
 	
+	public void updateMeasurementResultContext(Parcelable[] results){
+		Bundle b = new Bundle();
+		b.putString("type","UPDATE_MEASUREMENT_RESULT");
+		b.putParcelableArray("results", results);
+		Message msg = contextHandler.obtainMessage();
+		msg.setData(b);
+		msg.sendToTarget();
+	}
+	
+	private void updateMeasurementResultContext(Bundle b){
+		Parcelable[] parcels = b.getParcelableArray("results");
+		MeasurementResult[] results = null;
+		if ( parcels != null ) {
+	          results = new MeasurementResult[parcels.length];
+	          for ( int i = 0; i < results.length; i++ ) {
+	            results[i] = (MeasurementResult) parcels[i];
+	            Log.i("xsc","Measurement Result: "+results[i]);
+	          }
+		}
+	}
+	
 	private void registerMeasurementTask(Bundle b){
 		MeasurementTask measurementTask = (MeasurementTask)
 		          b.getParcelable(UpdateIntent.MEASUREMENT_TASK_PAYLOAD);
@@ -154,10 +177,12 @@ public class ContextMonitor {
 			String msgType = b.getString("type");
 			if(msgType.equals(PhoneUtils.MOVEMENT_SENSOR_CHANGED)){
 				processAccelData(b.getLong("time"),b.getFloat("x"),b.getFloat("y"),b.getFloat("z"));
-			}else if(msgType.equals("REGISTER_TASK")){
-				registerMeasurementTask(b);
 			}else if(msgType.equals(PhoneUtils.CELLULAR_RSSI_CHANGED)){
 				onContextChanged(Prerequisite.CELLULAR_RSSI);
+			}else if(msgType.equals("UPDATE_MEASUREMENT_RESULT")){
+				updateMeasurementResultContext(b);
+			}else if(msgType.equals("REGISTER_TASK")){
+				registerMeasurementTask(b);
 			}
 		}
 	}

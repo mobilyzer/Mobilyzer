@@ -34,6 +34,7 @@ import com.mobilyzer.MeasurementTask;
 import com.mobilyzer.PLTExecutorService;
 import com.mobilyzer.UpdateIntent;
 import com.mobilyzer.exceptions.MeasurementError;
+import com.mobilyzer.util.ContextMonitor;
 import com.mobilyzer.util.Logger;
 import com.mobilyzer.util.MeasurementJsonConvertor;
 import com.mobilyzer.util.PhoneUtils;
@@ -318,6 +319,7 @@ public class PageLoadTimeTask extends MeasurementTask {
 		 }
 
 		 PhoneUtils.getGlobalContext().stopService(new Intent(PhoneUtils.getGlobalContext(), PLTExecutorService.class));
+		 ContextMonitor.getContextMonitor().updateMeasurementResultContext(mrArray);
 		 return mrArray;
 
 	 }

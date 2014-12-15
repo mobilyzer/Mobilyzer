@@ -19,13 +19,13 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Log;
 
-
 import com.mobilyzer.Config;
 import com.mobilyzer.MeasurementDesc;
 import com.mobilyzer.MeasurementResult;
 import com.mobilyzer.MeasurementTask;
 import com.mobilyzer.MeasurementResult.TaskProgress;
 import com.mobilyzer.exceptions.MeasurementError;
+import com.mobilyzer.util.ContextMonitor;
 import com.mobilyzer.util.Logger;
 import com.mobilyzer.util.MeasurementJsonConvertor;
 import com.mobilyzer.util.PhoneUtils;
@@ -237,6 +237,7 @@ public class PingTask extends MeasurementTask{
       Logger.i("running ping command");
       // Prevents the phone from going to low-power mode where WiFi turns off
       result[0]=executePingCmdTask(ipByteLength);
+      ContextMonitor.getContextMonitor().updateMeasurementResultContext(result);
       return result;
     }
 
@@ -244,10 +245,12 @@ public class PingTask extends MeasurementTask{
       try {
         Logger.i("running java ping");
         result[0]=executeJavaPingTask();
+        ContextMonitor.getContextMonitor().updateMeasurementResultContext(result);
         return result;
       } catch (MeasurementError ee) {
         Logger.i("running http ping");
         result[0]=executeHttpPingTask();
+        ContextMonitor.getContextMonitor().updateMeasurementResultContext(result);
         return result;
       }
     }

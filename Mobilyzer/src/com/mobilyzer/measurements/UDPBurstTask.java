@@ -34,6 +34,7 @@ import com.mobilyzer.MeasurementResult;
 import com.mobilyzer.MeasurementTask;
 import com.mobilyzer.MeasurementResult.TaskProgress;
 import com.mobilyzer.exceptions.MeasurementError;
+import com.mobilyzer.util.ContextMonitor;
 import com.mobilyzer.util.Logger;
 import com.mobilyzer.util.MLabNS;
 import com.mobilyzer.util.PhoneUtils;
@@ -780,6 +781,7 @@ public class UDPBurstTask extends MeasurementTask {
     result.addResult("jitter", udpResult.jitter);
     MeasurementResult[] mrArray = new MeasurementResult[1];
     mrArray[0] = result;
+    ContextMonitor.getContextMonitor().updateMeasurementResultContext(mrArray);
     return mrArray;
 
   }
