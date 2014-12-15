@@ -2,6 +2,7 @@ package com.mobilyzer;
 
 
 import java.io.InvalidClassException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Set;
@@ -16,6 +17,7 @@ import com.mobilyzer.measurements.RRCTask;
 import com.mobilyzer.measurements.TCPThroughputTask;
 import com.mobilyzer.measurements.TracerouteTask;
 import com.mobilyzer.measurements.UDPBurstTask;
+import com.mobilyzer.prerequisite.Prerequisite;
 
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -26,6 +28,7 @@ public abstract class MeasurementTask
       Comparable,
       Parcelable {
   protected MeasurementDesc measurementDesc;
+  protected ArrayList<Prerequisite> prerequisites;
   protected String taskId;
 
 
@@ -70,9 +73,14 @@ public abstract class MeasurementTask
   protected MeasurementTask(MeasurementDesc measurementDesc) {
     super();
     this.measurementDesc = measurementDesc;
+    refreshPrerequisites();
     generateTaskID();
   }
 
+  public void refreshPrerequisites(){
+	if (measurementDesc.parameters.containsKey("prerequisites"))
+  		prerequisites = Prerequisite.makePrerequisitesFromString(measurementDesc.parameters.get("prerequisites"));
+  }
   /* Compare priority as the first order. Then compare start time. */
    @Override
    public int compareTo(Object t) {
@@ -97,6 +105,10 @@ public abstract class MeasurementTask
       long endTime = this.measurementDesc.endTime.getTime();
       return endTime <= System.currentTimeMillis();
     }
+  }
+  
+  public ArrayList<Prerequisite> getPrerequisites(){
+	  return prerequisites;
   }
 
   public String getMeasurementType() {
@@ -217,6 +229,12 @@ public abstract class MeasurementTask
   protected MeasurementTask(Parcel in) {
     ClassLoader loader = Thread.currentThread().getContextClassLoader();
     measurementDesc = in.readParcelable(loader);
+    Object[] preobjects = in.readArray(loader);
+    if (preobjects.length>0){
+    	prerequisites = new ArrayList<Prerequisite>();
+    	for (Object preobject: preobjects)
+    		prerequisites.add((Prerequisite)preobject);
+    }
     taskId = in.readString();
   }
 
@@ -228,6 +246,7 @@ public abstract class MeasurementTask
   @Override
   public void writeToParcel(Parcel dest, int flags) {
     dest.writeParcelable(measurementDesc, flags);
+    dest.writeArray(prerequisites.toArray());
     dest.writeString(taskId);
   }
   
@@ -240,4 +259,19 @@ public abstract class MeasurementTask
    */
   public abstract long getDataConsumed();
 
+  public boolean isConditional(){
+	  if (prerequisites!=null && prerequisites.size()>0)
+		  return true;
+	  return false;
+  }
+  
+  public boolean isPrereqSatisied(){
+	  if (prerequisites!=null && prerequisites.size()>0){
+		 for (Prerequisite pre: prerequisites){
+			 if (!pre.satisfy())
+				 return false;
+		 }
+	  }
+	  return true;
+  }
 }

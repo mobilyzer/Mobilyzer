@@ -19,6 +19,10 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
@@ -31,7 +35,10 @@ import android.net.wifi.WifiManager;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.HandlerThread;
 import android.os.Looper;
+import android.os.Message;
+import android.os.Messenger;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.provider.Settings.Secure;
@@ -55,7 +62,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-
 
 import com.mobilyzer.Config;
 import com.mobilyzer.DeviceInfo;
@@ -318,6 +324,7 @@ public class PhoneUtils {
     "EHRPD",    // 14 - NETWORK_TYPE_EHRPD
     "HSPAP",    // 15 - NETWORK_TYPE_HSPAP
   };
+public static final String CELLULAR_RSSI_CHANGED = "cellular_rssi_changed";
 
   /** Returns mobile data network connection type. */
   private String getTelephonyNetworkType() {
@@ -645,8 +652,12 @@ public class PhoneUtils {
       } else if (signalStrength.isGsm()) {
         setCurrentRssi(signalStrength.getGsmSignalStrength());
       }
+      Bundle b = new Bundle();
+      b.putString("type", CELLULAR_RSSI_CHANGED);
+      notifyContextChanged(b);
     }
   }
+  
   
 //  /**
 //   * Fetches the new connectivity state from the connectivity manager directly.
@@ -913,6 +924,61 @@ public class PhoneUtils {
         mobilyzerVersion, PhoneUtils.clientKeySet, requestApp);
   } 
   
+  ContextMonitor.ContextHandler contextHandler = null;
+  HandlerThread contextThread = null;
+  
+  public void startContextMonitorThread(){
+	if (contextThread == null){
+		contextThread = new HandlerThread("context_monitor_thread");
+		contextThread.start();
+		contextHandler = ContextMonitor.getContextMonitor().new ContextHandler();
+		ContextMonitor.getContextMonitor().setContextHandler(contextHandler);
+	}
+  }
+  
+  public void setSchedulerMessenger(Messenger msger){
+	ContextMonitor.getContextMonitor().setSchedulerMessenger(msger);  
+  }
+  
+  public void notifyContextChanged(Bundle b){
+	  if(contextHandler == null){
+		  startContextMonitorThread();
+	  }
+	  Message msg = contextHandler.obtainMessage();
+	  msg.setData(b);
+	  msg.sendToTarget();
+  }
+  
+  private SensorManager mSensorManager = null;
+  private Sensor mAccel = null;
+  public static String MOVEMENT_SENSOR_CHANGED = "movement_sensor_changed";
+  public void registerMovementListener() {
+	 mSensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
+	 mAccel = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+	 if (mAccel != null){
+		 mSensorManager.registerListener(new MovementListener(), mAccel, SensorManager.SENSOR_DELAY_NORMAL);
+	 }
+  }
+  
+  private class MovementListener implements SensorEventListener {
+	@Override
+	public void onSensorChanged(SensorEvent event) {
+		// TODO Auto-generated method stub
+		Bundle b = new Bundle();
+		b.putString("type", MOVEMENT_SENSOR_CHANGED);
+		b.putLong("time", event.timestamp);
+		b.putFloat("x",event.values[0]);
+		b.putFloat("y",event.values[1]);
+		b.putFloat("z",event.values[2]);
+		notifyContextChanged(b);
+	}
+
+	@Override
+	public void onAccuracyChanged(Sensor sensor, int accuracy) {
+		
+	}
+	  
+  }
   
   
 }

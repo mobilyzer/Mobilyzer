@@ -42,6 +42,7 @@ import com.mobilyzer.MeasurementTask;
 import com.mobilyzer.UpdateIntent;
 import com.mobilyzer.gcm.GCMManager;
 import com.mobilyzer.measurements.RRCTask;
+import com.mobilyzer.util.ContextMonitor;
 import com.mobilyzer.util.Logger;
 import com.mobilyzer.util.PhoneUtils;
 import com.mobilyzer.util.MeasurementJsonConvertor;
@@ -150,7 +151,9 @@ public class MeasurementScheduler extends Service {
     this.idToClientKey = new ConcurrentHashMap<String, String>();
 
     messenger = new Messenger(new APIRequestHandler(this));
-
+    phoneUtils.setSchedulerMessenger(messenger);
+    phoneUtils.startContextMonitorThread();
+    phoneUtils.registerMovementListener();
     gcmManager = new GCMManager(this.getApplicationContext());
     
     this.setCurrentTask(null);
@@ -435,9 +438,15 @@ public class MeasurementScheduler extends Service {
           task = mainQueue.peek();
           continue;
         }
-        Logger.i("MeasurementScheduler: handleMeasurement: "+task.getDescription().key + " " + task.getDescription().type
-            + " added to waiting list");
-        waitingTasksQueue.add(task);
+        if(task.isPrereqSatisied()){
+        	Logger.i("MeasurementScheduler: handleMeasurement: "+task.getDescription().key + " " + task.getDescription().type
+        			+ " added to waiting list");
+        	waitingTasksQueue.add(task);
+        }else{
+        	Logger.i("MeasurementScheduler: handleMeasurement: "+task.getDescription().key + " " + task.getDescription().type
+        			+ " register to context monitor");
+        	ContextMonitor.getContextMonitor().registerMeasurementTask(task);
+        }
         task = mainQueue.peek();
       }
 
@@ -453,6 +462,16 @@ public class MeasurementScheduler extends Service {
         return;
       }
 
+      while(waitingTasksQueue.size()!=0) {
+    	  MeasurementTask ready = waitingTasksQueue.peek();
+    	  if(!ready.isPrereqSatisied()){
+    		  waitingTasksQueue.poll();
+    		  ContextMonitor.getContextMonitor().registerMeasurementTask(ready);
+    		  continue;
+    	  }
+    	  break;
+      }
+      
       if (waitingTasksQueue.size() != 0) {
         Logger.i("waiting list size is " + waitingTasksQueue.size());
         MeasurementTask ready = waitingTasksQueue.poll();
@@ -480,6 +499,7 @@ public class MeasurementScheduler extends Service {
             newTask.getDescription().count--;
           }
           newTask.getDescription().startTime.setTime(newStartTime);
+          newTask.refreshPrerequisites();
           tasksStatus.put(newTask.getTaskId(), TaskStatus.SCHEDULED);
           mainQueue.add(newTask);
         } else {
@@ -1027,33 +1047,31 @@ public class MeasurementScheduler extends Service {
     this.notifyAll();
     phoneUtils.shutDown();
 
-
-
     Logger.i("Shut down all executors and stopping service");
   }
 
 
   private void getTasksFromServer() throws IOException {
-    Logger.i("Downloading tasks from the server");
-    checkin.getCookie();
-    List<MeasurementTask> tasksFromServer = checkin.checkin(resourceCapManager, gcmManager);
-    // The new task schedule overrides the old one
-
-    Logger.i("Received " + tasksFromServer.size() + " task(s) from server");
-
-    for (MeasurementTask task : tasksFromServer) {
-      task.measurementDesc.key = Config.SERVER_TASK_CLIENT_KEY;
-      if (adjustInterval(task)) {
-        if (task.getDescription().count == MeasurementTask.INFINITE_COUNT) {
-          if (!serverTasks.containsKey(task.getDescription().toString())) {
-            this.mainQueue.add(task);
-          }
-          serverTasks.put(task.getDescription().toString(), task.getDescription().endTime);
-        } else {
-          this.mainQueue.add(task);
-        }
-      }
-    }
+//    Logger.i("Downloading tasks from the server");
+//    checkin.getCookie();
+//    List<MeasurementTask> tasksFromServer = checkin.checkin(resourceCapManager, gcmManager);
+//    // The new task schedule overrides the old one
+//
+//    Logger.i("Received " + tasksFromServer.size() + " task(s) from server");
+//
+//    for (MeasurementTask task : tasksFromServer) {
+//      task.measurementDesc.key = Config.SERVER_TASK_CLIENT_KEY;
+//      if (adjustInterval(task)) {
+//        if (task.getDescription().count == MeasurementTask.INFINITE_COUNT) {
+//          if (!serverTasks.containsKey(task.getDescription().toString())) {
+//            this.mainQueue.add(task);
+//          }
+//          serverTasks.put(task.getDescription().toString(), task.getDescription().endTime);
+//        } else {
+//          this.mainQueue.add(task);
+//        }
+//      }
+//    }
 //    saveSchedulerState();//TODO(ASHKAN)
   }
 
