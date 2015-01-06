@@ -18,6 +18,7 @@ import java.io.InvalidClassException;
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -165,8 +166,14 @@ public class ParallelTask extends MeasurementTask{
 
   @Override
   public MeasurementResult[] call() throws MeasurementError {
+	List<MeasurementTask> satisfiedTasks = new ArrayList<MeasurementTask>();
+	for(MeasurementTask task: tasks){
+		if(task.isPrereqSatisied()){
+			satisfiedTasks.add(task);
+		}
+	}
     long timeout=duration;
-    executor=Executors.newFixedThreadPool(this.tasks.size());
+    executor=Executors.newFixedThreadPool(satisfiedTasks.size());
 
     if(timeout==0){
       timeout=Config.DEFAULT_PARALLEL_TASK_DURATION;
@@ -177,7 +184,7 @@ public class ParallelTask extends MeasurementTask{
     ArrayList<MeasurementResult> allResults=new ArrayList<MeasurementResult>();
     List<Future<MeasurementResult[]>> futures;
     try {
-      futures=executor.invokeAll(this.tasks,timeout,TimeUnit.MILLISECONDS);
+      futures=executor.invokeAll(satisfiedTasks,timeout,TimeUnit.MILLISECONDS);
       for(Future<MeasurementResult[]> f: futures){
         MeasurementResult[] r=f.get();
         for(int i=0;i<r.length;i++){

@@ -17,6 +17,7 @@ import com.mobilyzer.MeasurementTask;
 import com.mobilyzer.UpdateIntent;
 import com.mobilyzer.api.API;
 import com.mobilyzer.exceptions.MeasurementError;
+import com.mobilyzer.measurements.PingTask;
 import com.mobilyzer.prerequisite.Prerequisite;
 
 import android.os.Bundle;
@@ -52,6 +53,8 @@ public class ContextMonitor {
 		contextHandler = handler;
 	}
 	
+	private String resultType ="";
+	private double pingRTT= 0;
 	public String getContext(String contextName){
 		if(contextName.equals(Prerequisite.MOVE_COUNT))
 			return Long.toString(stepCount);
@@ -61,6 +64,10 @@ public class ContextMonitor {
 			return Integer.toString(phoneUtils.getCurrentRssi());
 		else if(contextName.equals(Prerequisite.NETWORK_TYPE))
 			return phoneUtils.getNetwork();
+		else if(contextName.equals(Prerequisite.RESULT_TYPE))
+			return resultType;
+		else if(contextName.equals(Prerequisite.PING_AVGRTT))
+			return Double.toString(pingRTT);
 		return "";
 	}
 	
@@ -71,6 +78,8 @@ public class ContextMonitor {
 		preNameToListenListMap.put(Prerequisite.MOVE_COUNT, new LinkedList<MeasurementTask>());
 		preNameToListenListMap.put(Prerequisite.CELLULAR_RSSI, new LinkedList<MeasurementTask>());
 		preNameToListenListMap.put(Prerequisite.NETWORK_TYPE, new LinkedList<MeasurementTask>());
+		preNameToListenListMap.put(Prerequisite.RESULT_TYPE, new LinkedList<MeasurementTask>());
+		preNameToListenListMap.put(Prerequisite.PING_AVGRTT, new LinkedList<MeasurementTask>());
 	}
 	private volatile LinkedList<MeasurementTask> allTaskList = new LinkedList<MeasurementTask>();
 	
@@ -95,6 +104,7 @@ public class ContextMonitor {
 		Log.i("xsc","Submit Task: "+task.toString());
 	    Log.i("xsc","Current registered task number: "+allTaskList.size());
 	}
+	
 	
 	public void registerMeasurementTask(MeasurementTask task){
 		Bundle b = new Bundle();
@@ -123,6 +133,13 @@ public class ContextMonitor {
 	            results[i] = (MeasurementResult) parcels[i];
 	            Log.i("xsc","Measurement Result: "+results[i]);
 	          }
+		}
+		MeasurementResult result = results[0];
+		resultType = result.getType();
+		onContextChanged(Prerequisite.RESULT_TYPE);
+		if (resultType.equals(PingTask.TYPE)){
+			pingRTT = Double.parseDouble(result.getValues().get("mean_rtt_ms"));
+			onContextChanged(Prerequisite.PING_AVGRTT);
 		}
 	}
 	

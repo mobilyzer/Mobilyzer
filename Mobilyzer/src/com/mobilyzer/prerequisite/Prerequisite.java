@@ -21,20 +21,22 @@ public abstract class Prerequisite implements Parcelable{
 		this.preName=preName;
 	}
 	
-	private static PhoneUtils phoneUtils;
 	private static HashMap<String, Class> preNameToType;
 	
 	static public final String NETWORK_TYPE = "network.type";
 	static public final String MOVE_COUNT = "movement.count";
 	static public final String MOVE_STATUS = "movement.status";
 	static public final String CELLULAR_RSSI = "network.cellular.rssi";
+	static public final String RESULT_TYPE = "result.type";
+	static public final String PING_AVGRTT = "result.ping.avgrtt";
 	static {
-		phoneUtils=PhoneUtils.getPhoneUtils();
 		preNameToType = new HashMap<String, Class>();
 		preNameToType.put(NETWORK_TYPE, StringPrerequisite.class);
 		preNameToType.put(MOVE_COUNT, IntPrerequisite.class);
 		preNameToType.put(MOVE_STATUS, BoolPrerequisite.class);
 		preNameToType.put(CELLULAR_RSSI, IntPrerequisite.class);
+		preNameToType.put(RESULT_TYPE, StringPrerequisite.class);
+		preNameToType.put(PING_AVGRTT, DoublePrerequisite.class);
 	}
 	public static ArrayList<Prerequisite> makePrerequisitesFromString(String s){
 		ArrayList<Prerequisite> results = new ArrayList<Prerequisite>();

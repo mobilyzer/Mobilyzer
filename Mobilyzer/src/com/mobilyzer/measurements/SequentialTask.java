@@ -172,6 +172,7 @@ public class SequentialTask extends MeasurementTask{
         if(stopFlag){
           throw new MeasurementError("Cancelled");
         }
+        if(!mt.isPrereqSatisied())break;
         Future<MeasurementResult[]> f=executor.submit(mt);
         currentTask=mt;
         MeasurementResult[] results;
