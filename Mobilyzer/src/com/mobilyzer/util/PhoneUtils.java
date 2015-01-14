@@ -410,12 +410,14 @@ public static final String CELLULAR_RSSI_CHANGED = "cellular_rssi_changed";
        * We only care about the location to determine the country,
        * so we don't need a super accurate location, cell/wifi is good enough.
        */
-      criteriaCoarse.setAccuracy(Criteria.ACCURACY_COARSE);
-      criteriaCoarse.setPowerRequirement(Criteria.POWER_LOW);
-      String providerName =
-          manager.getBestProvider(criteriaCoarse, /*enabledOnly=*/true);
+      //criteriaCoarse.setAccuracy(Criteria.ACCURACY_COARSE);
+      //criteriaCoarse.setAccuracy(Criteria.ACCURACY_FINE);
+      //criteriaCoarse.setPowerRequirement(Criteria.POWER_LOW);
+      //criteriaCoarse.setPowerRequirement(Criteria.POWER_HIGH);
+      //String providerName =
+      //    manager.getBestProvider(criteriaCoarse, /*enabledOnly=*/true);
       
-      
+      String providerName = LocationManager.GPS_PROVIDER;
       List<String> providers = manager.getAllProviders();
       for (String providerNameIter : providers) {
         try {

@@ -1,5 +1,6 @@
 package com.mobilyzer.prerequisite;
 
+import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Matcher;
@@ -46,7 +47,12 @@ public abstract class Prerequisite implements Parcelable{
 		for (String sPre: sPres){
 			sPre = sPre.trim();
 			if (sPre.length()==0)continue;
-			results.add(makePrerequisiteFromString(sPre));
+			Prerequisite pre = makePrerequisiteFromString(sPre);
+			if (pre==null){
+				results=null;
+				break;
+			}else
+				results.add(makePrerequisiteFromString(sPre));
 		}
 		return results;
 	}
@@ -69,7 +75,8 @@ public abstract class Prerequisite implements Parcelable{
 					result = new IntPrerequisite(preName, comparationOp, condition);
 				}else if (preNameToType.get(preName)==BoolPrerequisite.class){
 					result = new BoolPrerequisite(preName, comparationOp, condition);
-				}
+				}else
+					throw new InvalidParameterException("Unknown prerequisite");
 			}
 		}
 		return result;

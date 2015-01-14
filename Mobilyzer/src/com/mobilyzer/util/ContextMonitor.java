@@ -196,6 +196,7 @@ public class ContextMonitor {
 				processAccelData(b.getLong("time"),b.getFloat("x"),b.getFloat("y"),b.getFloat("z"));
 			}else if(msgType.equals(PhoneUtils.CELLULAR_RSSI_CHANGED)){
 				onContextChanged(Prerequisite.CELLULAR_RSSI);
+				Log.i("xsc","rssi changed "+phoneUtils.getCurrentRssi());
 			}else if(msgType.equals("UPDATE_MEASUREMENT_RESULT")){
 				updateMeasurementResultContext(b);
 			}else if(msgType.equals("REGISTER_TASK")){

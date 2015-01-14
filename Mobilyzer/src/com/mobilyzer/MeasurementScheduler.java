@@ -241,7 +241,7 @@ public class MeasurementScheduler extends Service {
                    */
                   result.getMeasurementDesc().parameters = null;
                   String jsonResult = MeasurementJsonConvertor.encodeToJson(result).toString();
-                  saveResultToFile(jsonResult);
+                  saveResultToFile(jsonResult+"\n");
                 } catch (JSONException e) {
                   Logger.e("Error converting results to json format", e);
                 }
@@ -477,8 +477,11 @@ public class MeasurementScheduler extends Service {
         Logger.i("ready: " + ready.getDescription().getType());
 
         MeasurementDesc desc = ready.getDescription();
-        long newStartTime = desc.startTime.getTime() + (long) desc.intervalSec * 1000;
-
+        
+        //we don't need to make up for the measurements that we miss before
+        //long newStartTime = desc.startTime.getTime() + (long) desc.intervalSec * 1000;
+        long newStartTime = System.currentTimeMillis() + (long) desc.intervalSec * 1000;
+        
         if (desc.count == MeasurementTask.INFINITE_COUNT
             && desc.priority != MeasurementTask.USER_PRIORITY) {
           if (serverTasks.containsKey(desc.toString())
