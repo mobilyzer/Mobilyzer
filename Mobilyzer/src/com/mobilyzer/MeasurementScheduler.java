@@ -55,6 +55,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.os.Handler;
 import android.os.IBinder;
 import android.os.Messenger;
 import android.os.Parcelable;
@@ -123,6 +124,7 @@ public class MeasurementScheduler extends Service {
 
   private GCMManager gcmManager;
   
+  private Handler contextHandler = null;
   
   @Override
   public void onCreate() {
@@ -152,8 +154,9 @@ public class MeasurementScheduler extends Service {
 
     messenger = new Messenger(new APIRequestHandler(this));
     phoneUtils.setSchedulerMessenger(messenger);
-    phoneUtils.startContextMonitorThread();
-    phoneUtils.registerMovementListener();
+    //contextHandler = ContextMonitor.getContextMonitor().getContextHandler();
+    
+    //phoneUtils.registerMovementListener();
     gcmManager = new GCMManager(this.getApplicationContext());
     
     this.setCurrentTask(null);
@@ -442,9 +445,9 @@ public class MeasurementScheduler extends Service {
         			+ " added to waiting list");
         	waitingTasksQueue.add(task);
         }else{
-        	Logger.i("MeasurementScheduler: handleMeasurement: "+task.getDescription().key + " " + task.getDescription().type
+        	/*Logger.i("MeasurementScheduler: handleMeasurement: "+task.getDescription().key + " " + task.getDescription().type
         			+ " register to context monitor");
-        	ContextMonitor.getContextMonitor().registerMeasurementTask(task);
+        	ContextMonitor.getContextMonitor().registerMeasurementTask(task);*/
         }
         task = mainQueue.peek();
       }
@@ -465,7 +468,7 @@ public class MeasurementScheduler extends Service {
     	  MeasurementTask ready = waitingTasksQueue.peek();
     	  if(!ready.isPrereqSatisied()){
     		  waitingTasksQueue.poll();
-    		  ContextMonitor.getContextMonitor().registerMeasurementTask(ready);
+    		  //ContextMonitor.getContextMonitor().registerMeasurementTask(ready);
     		  continue;
     	  }
     	  break;

@@ -22,6 +22,9 @@ public class IntPrerequisite extends Prerequisite {
 		condition = condition.replaceAll(" ", "");
 		LinkedList<Integer> operands=new LinkedList<Integer>();
 		LinkedList<String> operators = new LinkedList<String>();
+		if (condition.startsWith("-")){
+			condition="0"+condition;
+		}
 		while(true){
 			int index1 = condition.indexOf("+");
 			int index2 = condition.indexOf("-");

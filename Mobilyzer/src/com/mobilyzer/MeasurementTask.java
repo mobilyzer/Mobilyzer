@@ -28,7 +28,7 @@ public abstract class MeasurementTask
       Comparable,
       Parcelable {
   protected MeasurementDesc measurementDesc;
-  protected ArrayList<Prerequisite> prerequisites;
+  protected ArrayList<ArrayList<Prerequisite>> prerequisiteGroups;
   protected String taskId;
 
 
@@ -79,7 +79,7 @@ public abstract class MeasurementTask
 
   public void refreshPrerequisites(){
 	if (measurementDesc.parameters.containsKey("prerequisites"))
-  		prerequisites = Prerequisite.makePrerequisitesFromString(measurementDesc.parameters.get("prerequisites"));
+		prerequisiteGroups = Prerequisite.makePrerequisiteGroupsFromString(measurementDesc.parameters.get("prerequisites"));
   }
   /* Compare priority as the first order. Then compare start time. */
    @Override
@@ -107,8 +107,8 @@ public abstract class MeasurementTask
     }
   }
   
-  public ArrayList<Prerequisite> getPrerequisites(){
-	  return prerequisites;
+  public ArrayList<ArrayList<Prerequisite>> getPrerequisiteGroups(){
+	  return prerequisiteGroups;
   }
 
   public String getMeasurementType() {
@@ -229,12 +229,16 @@ public abstract class MeasurementTask
   protected MeasurementTask(Parcel in) {
     ClassLoader loader = Thread.currentThread().getContextClassLoader();
     measurementDesc = in.readParcelable(loader);
-    Object[] preobjects = in.readArray(loader);
-    if (preobjects.length>0){
-    	prerequisites = new ArrayList<Prerequisite>();
+    int groupNum = in.readInt();
+    ArrayList<ArrayList<Prerequisite>> prerequisiteGroups = new ArrayList<ArrayList<Prerequisite>>();
+    for (int groupI = 0; groupI<groupNum; groupI ++){
+    	ArrayList<Prerequisite> prerequisiteGroup = new ArrayList<Prerequisite>();
+    	Object[] preobjects = in.readArray(loader);
     	for (Object preobject: preobjects)
-    		prerequisites.add((Prerequisite)preobject);
+    		prerequisiteGroup.add((Prerequisite)preobject);
+    	prerequisiteGroups.add(prerequisiteGroup);
     }
+    
     taskId = in.readString();
   }
 
@@ -246,7 +250,13 @@ public abstract class MeasurementTask
   @Override
   public void writeToParcel(Parcel dest, int flags) {
     dest.writeParcelable(measurementDesc, flags);
-    dest.writeArray(prerequisites.toArray());
+    if(prerequisiteGroups==null)
+    	dest.writeInt(0);
+    else{
+    	dest.writeInt(prerequisiteGroups.size());
+    	for (int i=0; i<prerequisiteGroups.size(); i++)
+    		dest.writeArray(prerequisiteGroups.get(i).toArray());
+    }
     dest.writeString(taskId);
   }
   
@@ -260,17 +270,30 @@ public abstract class MeasurementTask
   public abstract long getDataConsumed();
 
   public boolean isConditional(){
-	  if (prerequisites!=null && prerequisites.size()>0)
+	  if (prerequisiteGroups!=null && prerequisiteGroups.size()>0)
 		  return true;
 	  return false;
   }
   
   public boolean isPrereqSatisied(){
-	  if (prerequisites!=null && prerequisites.size()>0){
-		 for (Prerequisite pre: prerequisites){
-			 if (!pre.satisfy())
-				 return false;
+	  if (prerequisiteGroups!=null && prerequisiteGroups.size()>0){
+		  boolean isSatisfied = false;
+		  //if ANY of the prerequisiteGroup is satisfied, return true
+		 for (ArrayList<Prerequisite> prerequisiteGroup: prerequisiteGroups){
+			 boolean isGroupSatisfied = true;
+			 //only if ALL of the prerequisites in the prerequisiteGroup is satisfied, return true
+			 for (Prerequisite pre: prerequisiteGroup){
+				 if (!pre.satisfy()){
+					 isGroupSatisfied = false;
+					 break;
+				 }
+			 }
+			 if (isGroupSatisfied){
+				 isSatisfied = true;
+				 break;
+			 }
 		 }
+		 return isSatisfied;
 	  }
 	  return true;
   }

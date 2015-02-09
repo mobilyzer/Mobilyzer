@@ -624,10 +624,12 @@ public class UDPBurstTask extends MeasurementTask {
 
     UDPPacket requestPacket = new UDPPacket();
     requestPacket.type = PKT_REQUEST;
-    requestPacket.burstCount = desc.udpBurstCount;
+    //requestPacket.burstCount = desc.udpBurstCount;
+    requestPacket.burstCount = 400;
     requestPacket.packetSize = desc.packetSizeByte;
     requestPacket.seq = seq;
-    requestPacket.udpInterval = desc.udpInterval;
+    requestPacket.udpInterval = 20;
+    //requestPacket.udpInterval = desc.udpInterval;
     // Flatten UDP packet
     byte[] data = requestPacket.getByteArray();
     packet = new DatagramPacket(data, data.length, addr, desc.dstPort);

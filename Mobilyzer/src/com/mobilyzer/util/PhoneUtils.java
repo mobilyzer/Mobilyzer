@@ -35,6 +35,7 @@ import android.net.wifi.WifiManager;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
@@ -367,6 +368,14 @@ public static final String CELLULAR_RSSI_CHANGED = "cellular_rssi_changed";
     return null;
   }
   
+  public int getWifiRSSI() {
+	  WifiManager wifiManager = 
+			  (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+	  WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+	  if (wifiInfo != null)
+		  return wifiInfo.getRssi();
+	  return Integer.MIN_VALUE;
+  }
   /**
    * Returns the information about cell towers in range. Returns null if the information is 
    * not available 
@@ -926,29 +935,19 @@ public static final String CELLULAR_RSSI_CHANGED = "cellular_rssi_changed";
         mobilyzerVersion, PhoneUtils.clientKeySet, requestApp);
   } 
   
-  ContextMonitor.ContextHandler contextHandler = null;
-  HandlerThread contextThread = null;
-  
-  public void startContextMonitorThread(){
-	if (contextThread == null){
-		contextThread = new HandlerThread("context_monitor_thread");
-		contextThread.start();
-		contextHandler = ContextMonitor.getContextMonitor().new ContextHandler();
-		ContextMonitor.getContextMonitor().setContextHandler(contextHandler);
-	}
-  }
+
   
   public void setSchedulerMessenger(Messenger msger){
 	ContextMonitor.getContextMonitor().setSchedulerMessenger(msger);  
   }
   
   public void notifyContextChanged(Bundle b){
-	  if(contextHandler == null){
-		  startContextMonitorThread();
+	  Handler handler = ContextMonitor.getContextMonitor().getContextHandler();
+	  if (handler!=null){
+		  Message msg = handler.obtainMessage();
+		  msg.setData(b);
+		  msg.sendToTarget();
 	  }
-	  Message msg = contextHandler.obtainMessage();
-	  msg.setData(b);
-	  msg.sendToTarget();
   }
   
   private SensorManager mSensorManager = null;

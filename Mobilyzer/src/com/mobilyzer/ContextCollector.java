@@ -41,7 +41,7 @@ public class ContextCollector {
   private long prevRecv;
   private long prevPktSend;
   private long prevPktRecv;
-
+  private boolean isScanFinished;
 
   public ContextCollector() {
     phoneUtils = PhoneUtils.getPhoneUtils();
@@ -54,6 +54,8 @@ public class ContextCollector {
     prevRecv = -1;
     prevPktSend = -1;
     prevPktRecv = -1;
+    
+    isScanFinished = false;
   }
 
   /**
@@ -110,6 +112,9 @@ public class ContextCollector {
       currentContext.put("battery_level", phoneUtils.getCurrentBatteryLevel() + "");
     }
 
+//    isScanFinished = false;
+//    while(!isScanFinished){
+//    }
     prevSend = sendBytes;
     prevRecv = recvBytes;
     prevPktSend = sendPkt;
