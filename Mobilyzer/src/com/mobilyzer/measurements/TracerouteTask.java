@@ -262,7 +262,8 @@ public class TracerouteTask extends MeasurementTask
 
   @Override
   public MeasurementResult[] call() throws MeasurementError {
-
+	  if(!this.isPrereqSatisied())
+			return MeasurementResult.getFailureResult(this,new MeasurementError("precondition not satisfied"));
     TracerouteDesc task = (TracerouteDesc) this.measurementDesc;
     //    int maxHopCount = task.maxHopCount;
     //    int ttl = 1;

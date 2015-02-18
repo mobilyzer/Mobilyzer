@@ -205,6 +205,8 @@ public class PageLoadTimeTask extends MeasurementTask {
 
 	 @Override
 	 public MeasurementResult[] call() throws MeasurementError {
+		 if(!this.isPrereqSatisied())
+				return MeasurementResult.getFailureResult(this,new MeasurementError("precondition not satisfied"));
 		 MeasurementResult[] mrArray = new MeasurementResult[1];
 		 PageLoadTimeDesc taskDesc = (PageLoadTimeDesc) this.measurementDesc;
 

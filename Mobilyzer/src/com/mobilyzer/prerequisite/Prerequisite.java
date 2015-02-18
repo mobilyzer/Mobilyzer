@@ -45,12 +45,14 @@ public abstract class Prerequisite implements Parcelable{
 		preNameToType.put(PING_AVGRTT, DoublePrerequisite.class);
 		preNameToType.put(WIFI_RSSI, IntPrerequisite.class);
 	}
-	public static ArrayList<ArrayList<Prerequisite>> makePrerequisiteGroupsFromString(String s){
+	public static ArrayList<ArrayList<Prerequisite>> makePrerequisiteGroupsFromString(String s) throws InvalidParameterException{
 		ArrayList<ArrayList<Prerequisite>> results = new ArrayList<ArrayList<Prerequisite>>();
 		if (s==null || s.trim().length()==0)
 			return results;
 		//prerequisite groups are connected by "|"
-		for (String sPreGroup: s.split("\\|")){
+		try{
+			for (String sPreGroup: s.split("\\|")){
+		
 			ArrayList<Prerequisite> preGroup = new ArrayList<Prerequisite>();
 			//prerequisites in a group are connected by "&"
 			for (String sPre: sPreGroup.split("&"))
@@ -67,10 +69,13 @@ public abstract class Prerequisite implements Parcelable{
 			}
 			results.add(preGroup);
 		}
+		}catch (InvalidParameterException e){
+			throw e;
+		}
 		return results;
 	}
 	
-	public static Prerequisite makePrerequisiteFromString(String s){
+	public static Prerequisite makePrerequisiteFromString(String s) throws InvalidParameterException{
 		Prerequisite result = null;
 		Pattern pattern = Pattern.compile("[<>=]+");
 		Matcher match = pattern.matcher(s);
@@ -90,7 +95,7 @@ public abstract class Prerequisite implements Parcelable{
 				}else if (preNameToType.get(preName)==BoolPrerequisite.class){
 					result = new BoolPrerequisite(preName, comparationOp, condition);
 				}else
-					throw new InvalidParameterException("Unknown prerequisite");
+					throw new InvalidParameterException("Unknown prerequisite type");
 			}
 		}
 		return result;

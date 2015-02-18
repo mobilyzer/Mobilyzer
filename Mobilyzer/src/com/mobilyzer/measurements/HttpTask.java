@@ -204,7 +204,8 @@ public class HttpTask extends MeasurementTask {
    *  is not turned off */
   @Override
   public MeasurementResult[] call() throws MeasurementError {
-
+	  if(!this.isPrereqSatisied())
+			return MeasurementResult.getFailureResult(this,new MeasurementError("precondition not satisfied"));
     int statusCode = HttpTask.DEFAULT_STATUS_CODE;
     long duration = 0;
     long originalHeadersLen = 0;

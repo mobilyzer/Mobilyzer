@@ -164,7 +164,8 @@ public class SequentialTask extends MeasurementTask{
 
   @Override
   public MeasurementResult[] call() throws MeasurementError {
-
+	 if(!this.isPrereqSatisied())
+			return MeasurementResult.getFailureResult(this,new MeasurementError("precondition not satisfied"));
     ArrayList<MeasurementResult> allResults=new ArrayList<MeasurementResult>();
     try {
       //      futures=executor.invokeAll(this.tasks,timeout,TimeUnit.MILLISECONDS);
@@ -172,7 +173,6 @@ public class SequentialTask extends MeasurementTask{
         if(stopFlag){
           throw new MeasurementError("Cancelled");
         }
-        if(!mt.isPrereqSatisied())break;
         Future<MeasurementResult[]> f=executor.submit(mt);
         currentTask=mt;
         MeasurementResult[] results;

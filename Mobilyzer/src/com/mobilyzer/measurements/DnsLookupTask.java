@@ -154,6 +154,8 @@ public class DnsLookupTask extends MeasurementTask{
 
   @Override
   public MeasurementResult[] call() throws MeasurementError {   
+	  if(!this.isPrereqSatisied())
+			return MeasurementResult.getFailureResult(this,new MeasurementError("precondition not satisfied"));
     long t1, t2;
     long totalTime = 0;
     InetAddress resultInet = null;

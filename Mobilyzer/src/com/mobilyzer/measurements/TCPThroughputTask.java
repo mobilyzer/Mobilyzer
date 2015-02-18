@@ -379,6 +379,8 @@ public class TCPThroughputTask extends MeasurementTask {
 
   @Override
   public MeasurementResult[] call() throws MeasurementError {
+	  if(!this.isPrereqSatisied())
+			return MeasurementResult.getFailureResult(this,new MeasurementError("precondition not satisfied"));
     this.taskProgress=TaskProgress.FAILED;
     TCPThroughputDesc desc = (TCPThroughputDesc)measurementDesc;
 

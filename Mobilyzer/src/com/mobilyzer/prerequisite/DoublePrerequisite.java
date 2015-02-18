@@ -1,5 +1,6 @@
 package com.mobilyzer.prerequisite;
 
+import java.security.InvalidParameterException;
 import java.util.LinkedList;
 
 import android.os.Parcel;
@@ -10,7 +11,7 @@ public class DoublePrerequisite extends Prerequisite {
 	protected double threshold;
 	
 	public DoublePrerequisite(String preName, String comparationOp2,
-			String condition) {
+			String condition) throws InvalidParameterException{
 		super(preName);
 		comparationOp = comparationOp2;
 		threshold = eval(condition);
@@ -18,9 +19,13 @@ public class DoublePrerequisite extends Prerequisite {
 
 
 
-	private double eval(String condition) {
+	private double eval(String condition) throws InvalidParameterException {
 		double result=0;
+		try{
 		condition = condition.replaceAll(" ", "");
+		if (condition.startsWith("-")){
+			condition="0"+condition;
+		}
 		LinkedList<Double> operands=new LinkedList<Double>();
 		LinkedList<String> operators = new LinkedList<String>();
 		while(true){
@@ -46,6 +51,9 @@ public class DoublePrerequisite extends Prerequisite {
 				else if (operator.equals("-"))operands.addFirst(operand1-operand2);
 			}
 			result = operands.poll();
+		}
+		}catch (Exception e){
+			throw new InvalidParameterException("fail to parse "+result+"in precondition");
 		}
 		return result;
 	}

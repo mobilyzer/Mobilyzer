@@ -624,12 +624,10 @@ public class UDPBurstTask extends MeasurementTask {
 
     UDPPacket requestPacket = new UDPPacket();
     requestPacket.type = PKT_REQUEST;
-    //requestPacket.burstCount = desc.udpBurstCount;
-    requestPacket.burstCount = 400;
+    requestPacket.burstCount = desc.udpBurstCount;
     requestPacket.packetSize = desc.packetSizeByte;
     requestPacket.seq = seq;
-    requestPacket.udpInterval = 20;
-    //requestPacket.udpInterval = desc.udpInterval;
+    requestPacket.udpInterval = desc.udpInterval;
     // Flatten UDP packet
     byte[] data = requestPacket.getByteArray();
     packet = new DatagramPacket(data, data.length, addr, desc.dstPort);
@@ -714,6 +712,8 @@ public class UDPBurstTask extends MeasurementTask {
    */
   @Override
   public MeasurementResult[] call() throws MeasurementError {
+	  if(!this.isPrereqSatisied())
+			return MeasurementResult.getFailureResult(this,new MeasurementError("precondition not satisfied"));
     DatagramSocket socket = null;
     float response = 0.0F;
     UDPResult udpResult;

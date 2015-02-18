@@ -17,8 +17,8 @@ public class StringPrerequisite extends Prerequisite {
 		String current = getCurrentContext();
 	
 		if(comparationOp.equals("="))
-			return current.equals(prio);
-		return !current.equals(prio);
+			return current.equalsIgnoreCase(prio);
+		return !current.equalsIgnoreCase(prio);
 	}
 	
 	

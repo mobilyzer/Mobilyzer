@@ -218,6 +218,8 @@ public class PingTask extends MeasurementTask{
    * JAVA_ICMP_PING, and HTTP_PING. If all fails, then we declare the resource unreachable */
   @Override
   public MeasurementResult[] call() throws MeasurementError {
+	  if(!this.isPrereqSatisied())
+			return MeasurementResult.getFailureResult(this,new MeasurementError("precondition not satisfied"));
     MeasurementResult[] result = null;
     PingDesc desc = (PingDesc) measurementDesc;
     int ipByteLength;

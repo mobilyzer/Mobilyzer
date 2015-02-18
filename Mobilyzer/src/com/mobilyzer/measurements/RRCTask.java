@@ -785,6 +785,8 @@ public class RRCTask extends MeasurementTask {
 
   @Override
   public MeasurementResult[] call() throws MeasurementError {
+	  if(!this.isPrereqSatisied())
+			return MeasurementResult.getFailureResult(this,new MeasurementError("precondition not satisfied"));
     try {
       RRCDesc desc = runInferenceTests();
       MeasurementResult[] mrArray = new MeasurementResult[1];

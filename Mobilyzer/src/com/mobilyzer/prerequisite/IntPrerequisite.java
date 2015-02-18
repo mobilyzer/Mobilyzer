@@ -1,5 +1,6 @@
 package com.mobilyzer.prerequisite;
 
+import java.security.InvalidParameterException;
 import java.util.LinkedList;
 
 import android.os.Parcel;
@@ -9,7 +10,7 @@ public class IntPrerequisite extends Prerequisite {
 	protected int threshold;
 	
 	public IntPrerequisite(String preName, String comparationOp2,
-			String condition) {
+			String condition) throws InvalidParameterException{
 		super(preName);
 		comparationOp = comparationOp2;
 		threshold = eval(condition);
@@ -17,37 +18,41 @@ public class IntPrerequisite extends Prerequisite {
 
 
 
-	private int eval(String condition) {
+	private int eval(String condition) throws InvalidParameterException {
 		int result=0;
-		condition = condition.replaceAll(" ", "");
-		LinkedList<Integer> operands=new LinkedList<Integer>();
-		LinkedList<String> operators = new LinkedList<String>();
-		if (condition.startsWith("-")){
-			condition="0"+condition;
-		}
-		while(true){
-			int index1 = condition.indexOf("+");
-			int index2 = condition.indexOf("-");
-			if (index1==-1 && index2==-1){
-				operands.add(Integer.parseInt(condition));
-				break;
+		try{
+			condition = condition.replaceAll(" ", "");
+			LinkedList<Integer> operands=new LinkedList<Integer>();
+			LinkedList<String> operators = new LinkedList<String>();
+			if (condition.startsWith("-")){
+				condition="0"+condition;
 			}
-			int index = index1;
-			if (index==-1) index =index2;
-			else if (index2!= -1 && index1> index2) index = index2;
-			operands.add(Integer.parseInt(condition.substring(0,index)));
-			operators.add(condition.substring(index,index+1));
-			condition = condition.substring(index+1);
-		}
-		if (operands.size()-operators.size()==1){
-			while(operators.size()>0){
-				int operand1 = operands.poll();
-				int operand2 = operands.poll();
-				String operator = operators.poll();
-				if(operator.equals("+"))operands.addFirst(operand1+operand2);
-				else if (operator.equals("-"))operands.addFirst(operand1-operand2);
+			while(true){
+				int index1 = condition.indexOf("+");
+				int index2 = condition.indexOf("-");
+				if (index1==-1 && index2==-1){
+					operands.add(Integer.parseInt(condition));
+					break;
+				}
+				int index = index1;
+				if (index==-1) index =index2;
+				else if (index2!= -1 && index1> index2) index = index2;
+				operands.add(Integer.parseInt(condition.substring(0,index)));
+				operators.add(condition.substring(index,index+1));
+				condition = condition.substring(index+1);
 			}
-			result = operands.poll();
+			if (operands.size()-operators.size()==1){
+				while(operators.size()>0){
+					int operand1 = operands.poll();
+					int operand2 = operands.poll();
+					String operator = operators.poll();
+					if(operator.equals("+"))operands.addFirst(operand1+operand2);
+					else if (operator.equals("-"))operands.addFirst(operand1-operand2);
+				}
+				result = operands.poll();
+			}
+		}catch (Exception e){
+			throw new InvalidParameterException("fail to parse "+result+"in precondition");
 		}
 		return result;
 	}

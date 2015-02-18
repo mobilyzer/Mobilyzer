@@ -55,10 +55,10 @@ public class ContextMonitor {
 	private ContextMonitor(){
 		//start the context_monitor_thread if necessary
 		if (contextMonitorThread==null){
-			/*contextMonitorThread = new HandlerThread("context_monitor_thread");
+			contextMonitorThread = new HandlerThread("context_monitor_thread");
 			contextMonitorThread.start();
 			Looper loop=contextMonitorThread.getLooper();
-			contextHandler = new ContextHandler(contextMonitorThread.getLooper());*/
+			contextHandler = new ContextHandler(contextMonitorThread.getLooper());
 		}
 	}
 	
@@ -205,7 +205,7 @@ public class ContextMonitor {
 		public void handleMessage(Message msg){
 			Bundle b = msg.getData();
 			String msgType = b.getString("type");
-			
+			Log.i("xsc",msgType);
 			if(msgType.equals(PhoneUtils.MOVEMENT_SENSOR_CHANGED)){
 				if(processAccelData(b.getLong("time"),b.getFloat("x"),b.getFloat("y"),b.getFloat("z")))
 					doRecheckListenList(getListenList(Prerequisite.PRE_TYPE_MOVEMENT));
