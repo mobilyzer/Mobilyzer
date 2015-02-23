@@ -18,7 +18,10 @@ public class BoolPrerequisite extends Prerequisite {
 
 	@Override
 	public boolean satisfy() {
-		boolean current = Boolean.parseBoolean(getCurrentContext());
+		String currentContext = getCurrentContext();
+		if (currentContext==null || currentContext=="null")
+			return false;
+		boolean current = Boolean.parseBoolean(currentContext);
 		if (current==preFlag && comparationOp.equals("="))
 			return true;
 		if (current!=preFlag && !comparationOp.equals("="))

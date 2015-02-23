@@ -7,7 +7,7 @@ import android.os.Parcel;
 
 public class IntPrerequisite extends Prerequisite {
 	protected String comparationOp;
-	protected int threshold;
+	protected long threshold;
 	
 	public IntPrerequisite(String preName, String comparationOp2,
 			String condition) throws InvalidParameterException{
@@ -17,12 +17,15 @@ public class IntPrerequisite extends Prerequisite {
 	}
 
 
-
-	private int eval(String condition) throws InvalidParameterException {
-		int result=0;
+	public long getThreshold(){
+		return threshold;
+	}
+	
+	private long eval(String condition) throws InvalidParameterException {
+		long result=0;
 		try{
 			condition = condition.replaceAll(" ", "");
-			LinkedList<Integer> operands=new LinkedList<Integer>();
+			LinkedList<Long> operands=new LinkedList<Long>();
 			LinkedList<String> operators = new LinkedList<String>();
 			if (condition.startsWith("-")){
 				condition="0"+condition;
@@ -31,20 +34,20 @@ public class IntPrerequisite extends Prerequisite {
 				int index1 = condition.indexOf("+");
 				int index2 = condition.indexOf("-");
 				if (index1==-1 && index2==-1){
-					operands.add(Integer.parseInt(condition));
+					operands.add(Long.parseLong(condition));
 					break;
 				}
 				int index = index1;
 				if (index==-1) index =index2;
 				else if (index2!= -1 && index1> index2) index = index2;
-				operands.add(Integer.parseInt(condition.substring(0,index)));
+				operands.add(Long.parseLong(condition.substring(0,index)));
 				operators.add(condition.substring(index,index+1));
 				condition = condition.substring(index+1);
 			}
 			if (operands.size()-operators.size()==1){
 				while(operators.size()>0){
-					int operand1 = operands.poll();
-					int operand2 = operands.poll();
+					long operand1 = operands.poll();
+					long operand2 = operands.poll();
 					String operator = operators.poll();
 					if(operator.equals("+"))operands.addFirst(operand1+operand2);
 					else if (operator.equals("-"))operands.addFirst(operand1-operand2);
@@ -59,7 +62,10 @@ public class IntPrerequisite extends Prerequisite {
 	
 	@Override
 	public boolean satisfy() {
-		int current = Integer.parseInt(getCurrentContext());
+		String currentContext = getCurrentContext();
+		if (currentContext==null || currentContext=="null")
+			return false;
+		long current = Long.parseLong(currentContext);
 		
 		if (current == threshold  && comparationOp.contains("="))
 			return true;
@@ -90,13 +96,13 @@ public class IntPrerequisite extends Prerequisite {
 	protected IntPrerequisite(Parcel in) {
 		super(in.readString());
 		comparationOp = in.readString();
-		threshold = in.readInt();
+		threshold = in.readLong();
 	}
 	
 	@Override
 	public void writeToParcel(Parcel dest, int flags) {
 		dest.writeString(preName);
 		dest.writeString(comparationOp);
-		dest.writeInt(threshold);
+		dest.writeLong(threshold);
 	}
 }

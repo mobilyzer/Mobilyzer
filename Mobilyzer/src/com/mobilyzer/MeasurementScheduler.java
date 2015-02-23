@@ -153,10 +153,8 @@ public class MeasurementScheduler extends Service {
     this.idToClientKey = new ConcurrentHashMap<String, String>();
 
     messenger = new Messenger(new APIRequestHandler(this));
-    phoneUtils.setSchedulerMessenger(messenger);
-    //contextHandler = ContextMonitor.getContextMonitor().getContextHandler();
-    
-    //phoneUtils.registerMovementListener();
+    phoneUtils.setSchedulerMessenger(messenger);   
+
     gcmManager = new GCMManager(this.getApplicationContext());
     
     this.setCurrentTask(null);
@@ -445,9 +443,10 @@ public class MeasurementScheduler extends Service {
         			+ " added to waiting list");
         	waitingTasksQueue.add(task);
         }else{
-        	/*Logger.i("MeasurementScheduler: handleMeasurement: "+task.getDescription().key + " " + task.getDescription().type
+        	Logger.i("MeasurementScheduler: handleMeasurement: "+task.getDescription().key + " " + task.getDescription().type
         			+ " register to context monitor");
-        	ContextMonitor.getContextMonitor().registerMeasurementTask(task);*/
+        	if(ContextMonitor.getContextMonitor()!=null)
+        		ContextMonitor.getContextMonitor().registerMeasurementTask(task);
         }
         task = mainQueue.peek();
       }

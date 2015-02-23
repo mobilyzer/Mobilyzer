@@ -19,15 +19,11 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
+//import android.hardware.Sensor;
+//import android.hardware.SensorEvent;
+//import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.location.Criteria;
 import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
-import android.location.LocationProvider;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiInfo;
@@ -64,6 +60,11 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
 import com.mobilyzer.Config;
 import com.mobilyzer.DeviceInfo;
 import com.mobilyzer.DeviceProperty;
@@ -74,7 +75,7 @@ import com.mobilyzer.R;
  * Phone related utilities.
  */
 @SuppressLint("NewApi")
-public class PhoneUtils {
+public class PhoneUtils implements ConnectionCallbacks, LocationListener {
 
   private static final String ANDROID_STRING = "Android";
   /** Returned by {@link #getNetwork()}. */
@@ -108,10 +109,10 @@ public class PhoneUtils {
   private Context context = null;
 
   /** Allows to obtain the phone's location, to determine the country. */
-  private LocationManager locationManager = null;
-
+//  private LocationManager locationManager = null;
+  private GoogleApiClient googleApiClient = null;
   /** The name of the location provider with "coarse" precision (cell/wifi). */
-  private String locationProviderName = null;
+//  private String locationProviderName = null;
 
   /** Allows to disable going to low-power mode where WiFi gets turned off. */
   WakeLock wakeLock = null;
@@ -129,7 +130,8 @@ public class PhoneUtils {
   /** Receiver that handles battery change broadcast intents */
   private BroadcastReceiver broadcastReceiver;
   private int currentSignalStrength = NeighboringCellInfo.UNKNOWN_RSSI;
-  
+  /** Current call state **/
+  private String callState = "IDLE";
   /** For monitoring the current network connection type**/
   public static int TYPE_WIFI = 1;
   public static int TYPE_MOBILE = 2;
@@ -161,6 +163,11 @@ public class PhoneUtils {
     Intent powerIntent = globalContext.registerReceiver(broadcastReceiver, 
         new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
     updateBatteryStat(powerIntent);
+    globalContext.registerReceiver(new ConnectivityReceiver(), new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
+    globalContext.registerReceiver(new WifiRSSIReceiver(), new IntentFilter(WifiManager.RSSI_CHANGED_ACTION));
+    googleApiClient = new GoogleApiClient.Builder(context).addApi(
+			LocationServices.API).build();
+	googleApiClient.connect();
 //    this.mWebView=null;
   }
 
@@ -277,6 +284,7 @@ public class PhoneUtils {
     initNetwork();
     telephonyManager.listen(new SignalStrengthChangeListener(), 
         PhoneStateListener.LISTEN_SIGNAL_STRENGTHS);
+    telephonyManager.listen(new CallStateChangeListener(), PhoneStateListener.LISTEN_CALL_STATE);
   }
 
   /** Returns the network that the phone is on (e.g. Wifi, Edge, GPRS, etc). */
@@ -325,6 +333,12 @@ public class PhoneUtils {
     "EHRPD",    // 14 - NETWORK_TYPE_EHRPD
     "HSPAP",    // 15 - NETWORK_TYPE_HSPAP
   };
+  
+  private static final String[] CALL_STATES = {
+	"IDLE",
+	"RINGING",
+	"OFFHOOK"
+  };
 public static final String CELLULAR_RSSI_CHANGED = "cellular_rssi_changed";
 
   /** Returns mobile data network connection type. */
@@ -358,7 +372,7 @@ public static final String CELLULAR_RSSI_CHANGED = "cellular_rssi_changed";
   }
 
   /** Returns current Wi-Fi SSID, or null if Wi-Fi is not connected. */
-  private String getWifiCarrierName() {
+  public String getWifiCarrierName() {
     WifiManager wifiManager =
         (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
     WifiInfo wifiInfo = wifiManager.getConnectionInfo();
@@ -368,6 +382,45 @@ public static final String CELLULAR_RSSI_CHANGED = "cellular_rssi_changed";
     return null;
   }
   
+  /** Returns current Wi-Fi BSSID, or null if Wi-Fi is not connected. */
+  public String getWifiBSSID() {
+    WifiManager wifiManager =
+        (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+    WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+    if (wifiInfo != null) {
+      return wifiInfo.getBSSID();
+    }
+    return null;
+  }
+  
+  /** Listen for changes in network connectivity **/
+  class ConnectivityReceiver extends BroadcastReceiver {
+		public void onReceive(Context c, Intent intent) {
+			if (intent.getAction().equals(ConnectivityManager.CONNECTIVITY_ACTION)){
+				if(isNetworkAvailable()){
+				      ContextMonitor contextMonitor = ContextMonitor.getContextMonitor();
+				      if (contextMonitor!=null){
+				    	  contextMonitor.updateNetworkTypeContext();
+				      }
+				}
+			}
+		}
+  }
+  
+  /** Listen for change in wifi rssi **/
+  class WifiRSSIReceiver extends BroadcastReceiver {
+		public void onReceive(Context c, Intent intent) {
+			if (intent.getAction().equals(WifiManager.RSSI_CHANGED_ACTION)){
+				if(isNetworkAvailable()){
+				      ContextMonitor contextMonitor = ContextMonitor.getContextMonitor();
+				      if (contextMonitor!=null){
+				    	  contextMonitor.updateWifiRssiContext();
+				      }
+				}
+			}
+		}
+  }
+  /** RETURN current wifi RSSI, or Integer.MIN_VALUE if not connected. */
   public int getWifiRSSI() {
 	  WifiManager wifiManager = 
 			  (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
@@ -402,81 +455,107 @@ public static final String CELLULAR_RSSI_CHANGED = "cellular_rssi_changed";
     }
   }
 
-  /**
-   * Lazily initializes the location manager.
-   *
-   * As a side effect, assigns locationManager and locationProviderName.
-   */
-  private synchronized void initLocation() {
-    if (locationManager == null) {
-      LocationManager manager =
-        (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
-
-      Criteria criteriaCoarse = new Criteria();
-      /* "Coarse" accuracy means "no need to use GPS".
-       * Typically a gShots phone would be located in a building,
-       * and GPS may not be able to acquire a location.
-       * We only care about the location to determine the country,
-       * so we don't need a super accurate location, cell/wifi is good enough.
-       */
-      //criteriaCoarse.setAccuracy(Criteria.ACCURACY_COARSE);
-      //criteriaCoarse.setAccuracy(Criteria.ACCURACY_FINE);
-      //criteriaCoarse.setPowerRequirement(Criteria.POWER_LOW);
-      //criteriaCoarse.setPowerRequirement(Criteria.POWER_HIGH);
-      //String providerName =
-      //    manager.getBestProvider(criteriaCoarse, /*enabledOnly=*/true);
-      
-      String providerName = LocationManager.GPS_PROVIDER;
-      List<String> providers = manager.getAllProviders();
-      for (String providerNameIter : providers) {
-        try {
-          LocationProvider provider = manager.getProvider(providerNameIter);
-        } catch (SecurityException se) {
-          // Not allowed to use this provider
-          Logger.w("Unable to use provider " + providerNameIter);
-          continue;
-        }
-        Logger.i(providerNameIter + ": " +
-              (manager.isProviderEnabled(providerNameIter) ? "enabled" : "disabled"));
-      }
-
-      /* Make sure the provider updates its location.
-       * Without this, we may get a very old location, even a
-       * device powercycle may not update it.
-       * {@see android.location.LocationManager.getLastKnownLocation}.
-       */
-      manager.requestLocationUpdates(providerName,
-                                     /*minTime=*/0,
-                                     /*minDistance=*/0,
-                                     new LoggingLocationListener(),
-                                     Looper.getMainLooper());
-      locationManager = manager;
-      locationProviderName = providerName;
-    }
-    assert locationManager != null;
-    assert locationProviderName != null;
-  }
-
-  /**
-   * Returns the location of the device.
-   *
-   * @return the location of the device
-   */
+//  /**
+//   * Lazily initializes the location manager.
+//   *
+//   * As a side effect, assigns locationManager and locationProviderName.
+//   */
+//  private synchronized void initLocation() {
+//    if (locationManager == null) {
+//      LocationManager manager =
+//        (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+//
+//      Criteria criteriaCoarse = new Criteria();
+//      /* "Coarse" accuracy means "no need to use GPS".
+//       * Typically a gShots phone would be located in a building,
+//       * and GPS may not be able to acquire a location.
+//       * We only care about the location to determine the country,
+//       * so we don't need a super accurate location, cell/wifi is good enough.
+//       */
+//      //criteriaCoarse.setAccuracy(Criteria.ACCURACY_COARSE);
+//      //criteriaCoarse.setAccuracy(Criteria.ACCURACY_FINE);
+//      //criteriaCoarse.setPowerRequirement(Criteria.POWER_LOW);
+//      //criteriaCoarse.setPowerRequirement(Criteria.POWER_HIGH);
+//      //String providerName =
+//      //    manager.getBestProvider(criteriaCoarse, /*enabledOnly=*/true);
+//      
+//      String providerName = LocationManager.GPS_PROVIDER;
+//      List<String> providers = manager.getAllProviders();
+//      for (String providerNameIter : providers) {
+//        try {
+//          LocationProvider provider = manager.getProvider(providerNameIter);
+//        } catch (SecurityException se) {
+//          // Not allowed to use this provider
+//          Logger.w("Unable to use provider " + providerNameIter);
+//          continue;
+//        }
+//        Logger.i(providerNameIter + ": " +
+//              (manager.isProviderEnabled(providerNameIter) ? "enabled" : "disabled"));
+//      }
+//
+//      /* Make sure the provider updates its location.
+//       * Without this, we may get a very old location, even a
+//       * device powercycle may not update it.
+//       * {@see android.location.LocationManager.getLastKnownLocation}.
+//       */
+//      manager.requestLocationUpdates(providerName,
+//                                     /*minTime=*/0,
+//                                     /*minDistance=*/0,
+//                                     new LoggingLocationListener(),
+//                                     Looper.getMainLooper());
+//      locationManager = manager;
+//      locationProviderName = providerName;
+//    }
+//    assert locationManager != null;
+//    assert locationProviderName != null;
+//  }
+//
+//  /**
+//   * Returns the location of the device.
+//   *
+//   * @return the location of the device
+//   */
+//  public Location getLocation() {
+//    try {
+//      initLocation();
+//      Location location = locationManager.getLastKnownLocation(locationProviderName);
+//      if (location == null) {
+//        Logger.e("Cannot obtain location from provider " + locationProviderName);
+//        return new Location("unknown");
+//      }
+//      return location;
+//    } catch (IllegalArgumentException e) {
+//      Logger.e("Cannot obtain location", e);
+//      return new Location("unknown");
+//    }
+//  }
+  
   public Location getLocation() {
-    try {
-      initLocation();
-      Location location = locationManager.getLastKnownLocation(locationProviderName);
-      if (location == null) {
-        Logger.e("Cannot obtain location from provider " + locationProviderName);
-        return new Location("unknown");
-      }
-      return location;
-    } catch (IllegalArgumentException e) {
-      Logger.e("Cannot obtain location", e);
-      return new Location("unknown");
-    }
+	  if (googleApiClient!=null && googleApiClient.isConnected())
+		  return LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
+	  return null;
   }
+   @Override
+	public void onLocationChanged(Location arg0) {
+		ContextMonitor contextMonitor = ContextMonitor.getContextMonitor();
+		if (contextMonitor!=null)
+			contextMonitor.updateLocationContext();
+	}
 
+
+	@Override
+	public void onConnected(Bundle arg0) {
+		LocationRequest mLocationRequest = new LocationRequest();
+	    mLocationRequest.setInterval(10*60*1000);
+	    mLocationRequest.setPriority(LocationRequest.PRIORITY_LOW_POWER);
+	    LocationServices.FusedLocationApi.requestLocationUpdates(
+	            googleApiClient, mLocationRequest, this);
+	}
+	
+	@Override
+	public void onConnectionSuspended(int arg0) {
+		
+	}
   /** Wakes up the CPU of the phone if it is sleeping. */
   public synchronized void acquireWakeLock() {
     if (wakeLock == null) {
@@ -522,33 +601,41 @@ public static final String CELLULAR_RSSI_CHANGED = "cellular_rssi_changed";
     return display.getWidth() > display.getHeight();
   }
 
+//  /**
+//   * Return whether the screen is on or off, need API 20
+//   */
+//  public int getDeviceState() {
+//	  WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+//	  Display display = wm.getDefaultDisplay();
+//	  
+//	  return display.getState();
+//  }
   
-
   /**
    * A dummy listener that just logs callbacks.
    */
-  private static class LoggingLocationListener implements LocationListener {
-
-    @Override
-    public void onLocationChanged(Location location) {
-      Logger.d("location changed");
-    }
-
-    @Override
-    public void onProviderDisabled(String provider) {
-      Logger.d("provider disabled: " + provider);
-    }
-
-    @Override
-    public void onProviderEnabled(String provider) {
-      Logger.d("provider enabled: " + provider);
-    }
-
-    @Override
-    public void onStatusChanged(String provider, int status, Bundle extras) {
-      Logger.d("status changed: " + provider + "=" + status);
-    }
-  }
+//  private static class LoggingLocationListener implements LocationListener {
+//
+//    @Override
+//    public void onLocationChanged(Location location) {
+//      Logger.d("location changed");
+//    }
+//
+//    @Override
+//    public void onProviderDisabled(String provider) {
+//      Logger.d("provider disabled: " + provider);
+//    }
+//
+//    @Override
+//    public void onProviderEnabled(String provider) {
+//      Logger.d("provider enabled: " + provider);
+//    }
+//
+//    @Override
+//    public void onStatusChanged(String provider, int status, Bundle extras) {
+//      Logger.d("status changed: " + provider + "=" + status);
+//    }
+//  }
 
   /**
    * Types of interfaces to return from {@link #getUpInterfaces(InterfaceType)}.
@@ -625,6 +712,13 @@ public static final String CELLULAR_RSSI_CHANGED = "cellular_rssi_changed";
     return currentSignalStrength;
   }
   
+  /**
+   * Returns the current call state
+   */
+  public synchronized String getCallState() {
+	  return CALL_STATES[telephonyManager.getCallState()];
+  }
+  
   private synchronized void updateBatteryStat(Intent powerIntent) {
     int scale = powerIntent.getIntExtra(BatteryManager.EXTRA_SCALE, 
         Config.DEFAULT_BATTERY_SCALE);
@@ -650,6 +744,17 @@ public static final String CELLULAR_RSSI_CHANGED = "cellular_rssi_changed";
     }
   }
   
+  private class CallStateChangeListener extends PhoneStateListener{
+	  @Override
+		public void onCallStateChanged(int state, String incomingNumber) {
+			callState = CALL_STATES[state];
+			ContextMonitor contextMonitor = ContextMonitor.getContextMonitor();
+		      if (contextMonitor!=null){
+		    	  contextMonitor.updateCallStateContext();
+		      }
+		}
+  }
+  
   private class SignalStrengthChangeListener extends PhoneStateListener {
     @Override
     public void onSignalStrengthsChanged(SignalStrength signalStrength) {
@@ -663,9 +768,10 @@ public static final String CELLULAR_RSSI_CHANGED = "cellular_rssi_changed";
       } else if (signalStrength.isGsm()) {
         setCurrentRssi(signalStrength.getGsmSignalStrength());
       }
-      Bundle b = new Bundle();
-      b.putString("type", CELLULAR_RSSI_CHANGED);
-      notifyContextChanged(b);
+      ContextMonitor contextMonitor = ContextMonitor.getContextMonitor();
+      if (contextMonitor!=null){
+    	  contextMonitor.updateCellularRssiContext();
+      }
     }
   }
   
@@ -938,48 +1044,14 @@ public static final String CELLULAR_RSSI_CHANGED = "cellular_rssi_changed";
 
   
   public void setSchedulerMessenger(Messenger msger){
-	ContextMonitor.getContextMonitor().setSchedulerMessenger(msger);  
+      ContextMonitor contextMonitor = ContextMonitor.getContextMonitor();
+      if (contextMonitor!=null){
+    	  contextMonitor.setSchedulerMessenger(msger); 
+      }
   }
-  
-  public void notifyContextChanged(Bundle b){
-	  Handler handler = ContextMonitor.getContextMonitor().getContextHandler();
-	  if (handler!=null){
-		  Message msg = handler.obtainMessage();
-		  msg.setData(b);
-		  msg.sendToTarget();
-	  }
-  }
-  
-  private SensorManager mSensorManager = null;
-  private Sensor mAccel = null;
-  public static String MOVEMENT_SENSOR_CHANGED = "movement_sensor_changed";
-  public void registerMovementListener() {
-	 mSensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
-	 mAccel = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-	 if (mAccel != null){
-		 mSensorManager.registerListener(new MovementListener(), mAccel, SensorManager.SENSOR_DELAY_NORMAL);
-	 }
-  }
-  
-  private class MovementListener implements SensorEventListener {
-	@Override
-	public void onSensorChanged(SensorEvent event) {
-		// TODO Auto-generated method stub
-		Bundle b = new Bundle();
-		b.putString("type", MOVEMENT_SENSOR_CHANGED);
-		b.putLong("time", event.timestamp);
-		b.putFloat("x",event.values[0]);
-		b.putFloat("y",event.values[1]);
-		b.putFloat("z",event.values[2]);
-		notifyContextChanged(b);
-	}
 
-	@Override
-	public void onAccuracyChanged(Sensor sensor, int accuracy) {
-		
-	}
-	  
-  }
+
+  
   
   
 }

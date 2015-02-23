@@ -60,7 +60,10 @@ public class DoublePrerequisite extends Prerequisite {
 	
 	@Override
 	public boolean satisfy() {
-		Double current = Double.parseDouble(getCurrentContext());
+		String currentContext = getCurrentContext();
+		if (currentContext==null || currentContext=="null")
+			return false;
+		Double current = Double.parseDouble(currentContext);
 		
 		if (current - threshold < 0.0001 && threshold - current < 0.0001 && comparationOp.contains("="))
 			return true;
