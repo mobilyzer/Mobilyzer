@@ -29,6 +29,8 @@ import com.google.android.exoplayer.drm.StreamingDrmSessionManager;
 import com.google.android.exoplayer.text.TextTrackRenderer;
 import com.google.android.exoplayer.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer.util.PlayerControl;
+import com.google.android.exoplayer.chunk.FormatEvaluator.ScaledAdaptiveEvaluator;
+import com.google.android.exoplayer.chunk.FormatEvaluator.ScaledBufferBasedAdaptiveEvaluator;
 import com.google.android.exoplayer.chunk.FormatEvaluator.BufferBasedAdaptiveEvaluator;
 import com.google.android.exoplayer.chunk.FormatEvaluator.AdaptiveEvaluator;
 
@@ -612,7 +614,8 @@ public class DemoPlayer implements ExoPlayer.Listener, ChunkSampleSource.EventLi
     DefaultBandwidthMeter.EventListener, MediaCodecVideoTrackRenderer.EventListener,
     MediaCodecAudioTrackRenderer.EventListener, TextTrackRenderer.TextRenderer,
     StreamingDrmSessionManager.EventListener, BufferBasedAdaptiveEvaluator.EventListener,
-    AdaptiveEvaluator.EventListener{
+    AdaptiveEvaluator.EventListener, ScaledBufferBasedAdaptiveEvaluator.EventListener,
+    ScaledAdaptiveEvaluator.EventListener{
 
   /**
    * Builds renderers for the player.
@@ -694,6 +697,7 @@ public class DemoPlayer implements ExoPlayer.Listener, ChunkSampleSource.EventLi
     void onLoadCompleted(int sourceId, long bytesLoaded);
     void onSwitchToSteadyState(long elapsedMs);
     void onAllChunksDownloaded(long totalBytes);
+    void onBufferLoadChanged(long bufferDurationMs);
   }
 
   /**
@@ -1166,4 +1170,11 @@ public class DemoPlayer implements ExoPlayer.Listener, ChunkSampleSource.EventLi
     
   }
 
+  @Override
+  public void onBufferLoadChanged(long bufferDurationMs) {
+    if (infoListener != null) {
+      infoListener.onBufferLoadChanged(bufferDurationMs);
+    }
+    
+  }
 }

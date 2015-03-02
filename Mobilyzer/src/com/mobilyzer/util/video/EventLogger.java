@@ -378,6 +378,7 @@ public class EventLogger implements DemoPlayer.Listener, DemoPlayer.InfoListener
   private ArrayList<Double> rebufferTime;
   private ArrayList<Pair<String, Double>> videoGoodput;
   private ArrayList<Pair<String, Double>> audioGoodput;
+  private ArrayList<Pair<String, Long>> bufferLoad;
   private int previousVideoBitrate;
   private int previousAudioBitrate;
   private long switchToSteadyStateTime;
@@ -407,6 +408,7 @@ public class EventLogger implements DemoPlayer.Listener, DemoPlayer.InfoListener
     this.rebufferTime = new ArrayList<Double>();
     this.videoGoodput = new ArrayList<Pair<String, Double>>();
     this.audioGoodput = new ArrayList<Pair<String, Double>>();
+    this.bufferLoad = new ArrayList<Pair<String, Long>>();
     this.videoBitrateVarience.add(Pair.create("0.00", 0));
     this.previousVideoBitrate = 0;
     this.audioBitrateVarience.add(Pair.create("0.00", 0));
@@ -515,6 +517,18 @@ public class EventLogger implements DemoPlayer.Listener, DemoPlayer.InfoListener
     videoQoEResult.putExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_BITRATE_TIMESTAMP, bitrateTimestamp);
     videoQoEResult.putExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_BITRATE_VALUE, bitrateValue);
     
+
+    String[] bufferTimestamp = new String[this.bufferLoad.size()];
+    long[] bufferLoad = new long[this.bufferLoad.size()];
+    counter=0;
+    for (Pair<String, Long> bufferSample : this.bufferLoad) {
+      bufferTimestamp[counter] = bufferSample.first;
+      bufferLoad[counter] = bufferSample.second;
+      counter++;
+    }
+    videoQoEResult.putExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_BUFFER_TIMESTAMP, bufferTimestamp);
+    videoQoEResult.putExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_BUFFER_LOAD, bufferLoad);
+    
     return videoQoEResult;
   }
 
@@ -597,8 +611,9 @@ public class EventLogger implements DemoPlayer.Listener, DemoPlayer.InfoListener
     int currentBitrate = Id2Bitrate.get(formatId);
     Log.d(TAG, "videoFormat [" + getSessionTimeString() + ", " + formatId + ", " +
         Integer.toString(trigger) + ", " + currentBitrate / 1000 + "kbps" + "]");
-    this.videoBitrateVarience.add(Pair.create(getSessionTimeString(), this.previousVideoBitrate));
-    this.videoBitrateVarience.add(Pair.create(getSessionTimeString(), currentBitrate));
+    String timestamp = getSessionTimeString();
+    this.videoBitrateVarience.add(Pair.create(timestamp, this.previousVideoBitrate));
+    this.videoBitrateVarience.add(Pair.create(timestamp, currentBitrate));
     this.previousVideoBitrate = currentBitrate;
   }
 
@@ -607,8 +622,9 @@ public class EventLogger implements DemoPlayer.Listener, DemoPlayer.InfoListener
     int currentBitrate = Id2Bitrate.get(formatId);
     Log.d(TAG, "audioFormat [" + getSessionTimeString() + ", " + formatId + ", " +
         Integer.toString(trigger) + ", " + currentBitrate / 1000 + "kbps" + "]");
-    this.audioBitrateVarience.add(Pair.create(getSessionTimeString(), this.previousAudioBitrate));
-    this.audioBitrateVarience.add(Pair.create(getSessionTimeString(), currentBitrate));
+    String timestamp = getSessionTimeString();
+    this.audioBitrateVarience.add(Pair.create(timestamp, this.previousAudioBitrate));
+    this.audioBitrateVarience.add(Pair.create(timestamp, currentBitrate));
     this.previousAudioBitrate = currentBitrate;
   }
 
@@ -687,6 +703,13 @@ public class EventLogger implements DemoPlayer.Listener, DemoPlayer.InfoListener
   @Override
   public void onAllChunksDownloaded(long totalBytes) {
     this.totalBytesDownloaded=totalBytes;
+  }
+
+  @Override
+  public void onBufferLoadChanged(long bufferDurationMs) {
+    String timestamp = getSessionTimeString();
+    Log.d(TAG, "buffer [" + timestamp + ", " + bufferDurationMs + "]");
+    this.bufferLoad.add(Pair.create(timestamp, bufferDurationMs));
   }
 
 }

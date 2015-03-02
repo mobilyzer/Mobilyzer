@@ -500,7 +500,11 @@ public class MeasurementResult implements Parcelable {
 //      printer.println(UpdateIntent.VIDEO_TASK_PAYLOAD_IS_SUCCEED + ": " + values.get(UpdateIntent.VIDEO_TASK_PAYLOAD_IS_SUCCEED));
       printer.println("Num of frame dropped" + ": " + values.get("video_num_frame_dropped"));
       printer.println("Initial loading time" + ": " + values.get("video_initial_loading_time"));
-//      printer.println(UpdateIntent.VIDEO_TASK_PAYLOAD_REBUFFER_TIME + ": " + values.get(UpdateIntent.VIDEO_TASK_PAYLOAD_REBUFFER_TIME));
+      printer.println("Rebuffer times: " + values.get("video_rebuffer_times"));
+      printer.println("video_bitrate_times: " + values.get("video_bitrate_times"));
+      printer.println("video_bitrate_values: " + values.get("video_bitrate_values"));
+      printer.println("video average bitrate: " + values.get("video_average_bitrate"));
+      printer.println("video # bitrate change: " + values.get("video_num_bitrate_change"));
 //      printer.println(UpdateIntent.VIDEO_TASK_PAYLOAD_GOODPUT_TIMESTAMP + ": " + values.get(UpdateIntent.VIDEO_TASK_PAYLOAD_GOODPUT_TIMESTAMP));
 //      printer.println(UpdateIntent.VIDEO_TASK_PAYLOAD_GOODPUT_VALUE + ": " + values.get(UpdateIntent.VIDEO_TASK_PAYLOAD_GOODPUT_VALUE));
 //      printer.println(UpdateIntent.VIDEO_TASK_PAYLOAD_BITRATE_TIMESTAMP + ": " + values.get(UpdateIntent.VIDEO_TASK_PAYLOAD_BITRATE_TIMESTAMP));
@@ -511,6 +515,8 @@ public class MeasurementResult implements Parcelable {
       printer.println("Error: " + values.get("error"));
     }
   }
+
+
   /**
    * Removes the quotes surrounding the string. If |str| is null, returns null.
    */

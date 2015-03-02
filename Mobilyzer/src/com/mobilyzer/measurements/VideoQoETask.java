@@ -13,11 +13,13 @@
  */
 package com.mobilyzer.measurements;
 
+import java.io.IOException;
 import java.io.InvalidClassException;
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 import android.content.BroadcastReceiver;
@@ -59,6 +61,8 @@ public class VideoQoETask extends MeasurementTask {
   private ArrayList<Double> goodputValues = new ArrayList<Double>();
   private ArrayList<String> bitrateTimestamps = new ArrayList<String>();
   private ArrayList<Integer> bitrateValues = new ArrayList<Integer>();
+  private ArrayList<String> bufferLoadTimestamps = new ArrayList<String>();
+  private ArrayList<Long> bufferLoadValues = new ArrayList<Long>();
   private long bbaSwitchTime;
   private long dataConsumed;
   
@@ -77,6 +81,10 @@ public class VideoQoETask extends MeasurementTask {
     public String contentId;
     // The ABR algorithm for video playback
     public int contentType;
+    // The percentage of energy saving on radio energy consumption requested by user
+    public String energySaving;
+    // The buffer size in # of buffer blocks
+    public int bufferSegments;
 
     public VideoQoEDesc(String key, Date startTime, Date endTime, double intervalSec,
             long count, long priority, int contextIntervalSec, Map<String, String> params) {
@@ -110,7 +118,16 @@ public class VideoQoETask extends MeasurementTask {
         if ((val = params.get("content_type")) != null && Integer.parseInt(val) >= 0) {
           this.contentType = Integer.parseInt(val);
         }
-
+        this.energySaving = params.get("energy_saving");
+        if (this.energySaving != null && Integer.parseInt(this.energySaving) >= 100) {
+          this.energySaving = "100";
+        }
+        if ((val = params.get("buffer_segments")) != null) {
+          int num = Integer.parseInt(val);
+          if (num >= 0 && num <= 200) {
+            this.bufferSegments = num;
+          }
+        }
     }
 
     protected VideoQoEDesc(Parcel in) {
@@ -118,6 +135,8 @@ public class VideoQoETask extends MeasurementTask {
         contentURL = in.readString();
         contentId = in.readString();
         contentType = in.readInt();
+        energySaving = in.readString();
+        bufferSegments = in.readInt();
     }
 
     public static final Parcelable.Creator<VideoQoEDesc> CREATOR =
@@ -137,6 +156,8 @@ public class VideoQoETask extends MeasurementTask {
         dest.writeString(this.contentURL);
         dest.writeString(this.contentId);
         dest.writeInt(this.contentType);
+        dest.writeString(this.energySaving);
+        dest.writeInt(this.bufferSegments);
     }
   }
   
@@ -203,11 +224,30 @@ public class VideoQoETask extends MeasurementTask {
     MeasurementResult[] mrArray = new MeasurementResult[1];
     VideoQoEDesc taskDesc = (VideoQoEDesc) this.measurementDesc;
 
+
+    Process process = null;
+    try {
+//      process = new ProcessBuilder()
+//          .command("su", "-c", "/system/bin/tcpdump", "-s", "0", "-w", "hongyi_buffer_1.pcap")
+//          .start();
+      
+      process = Runtime.getRuntime().exec("su -c /system/bin/tcpdump -s 0 -w /sdcard/Mobiperf/hongyi_pcap_" + System.currentTimeMillis() + ".pcap");
+      Thread.sleep(5000);
+    } catch (IOException e1) {
+      Logger.e("Tcpdump start failed!");
+      return mrArray;
+    } catch (InterruptedException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+    
     Intent videoIntent = new Intent(PhoneUtils.getGlobalContext(), VideoPlayerService.class);
     videoIntent.setData(Uri.parse(taskDesc.contentURL));
     videoIntent.putExtra(DemoUtil.CONTENT_ID_EXTRA, taskDesc.contentId);
     videoIntent.putExtra(DemoUtil.CONTENT_TYPE_EXTRA, taskDesc.contentType);
     videoIntent.putExtra(DemoUtil.START_TIME_FILTER, this.startTimeFilter);
+    videoIntent.putExtra(DemoUtil.ENERGY_SAVING_EXTRA, 1 - (Double.valueOf(taskDesc.energySaving) / 100));
+    videoIntent.putExtra(DemoUtil.BUFFER_SEGMENTS_EXTRA, taskDesc.bufferSegments);
     PhoneUtils.getGlobalContext().startService(videoIntent);
 
 
@@ -267,14 +307,26 @@ public class VideoQoETask extends MeasurementTask {
             dataConsumed=intent.getLongExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_BYTE_USED, 0);
             Logger.d("Data consumed: " + dataConsumed);
           }
+          if (intent.hasExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_BUFFER_TIMESTAMP)) {
+            String[] bufferTimestampArray = intent.getStringArrayExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_BUFFER_TIMESTAMP);
+            bufferLoadTimestamps = new ArrayList<String>(Arrays.asList(bufferTimestampArray));
+            Logger.d("Buffer Timestamps: " + bufferLoadTimestamps);
+          }
+          if (intent.hasExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_BUFFER_LOAD)) {
+            long[] bufferLoadArray = intent.getLongArrayExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_BUFFER_LOAD);
+            for (long bufferLoad : bufferLoadArray) {
+              bufferLoadValues.add(bufferLoad);
+            }
+            Logger.d("Buffer Load Values: " + bufferLoadValues);
+          }
           isResultReceived = true;
         }
     };
     PhoneUtils.getGlobalContext().registerReceiver(broadcastReceiver, filter);
 
 
-
-    for(int i=0;i<60*5;i++){
+    int timeElapsed = 0;
+    for(timeElapsed = 0; timeElapsed< 60 * 5;timeElapsed++){
         if(isDone()){
             break;
         }
@@ -284,10 +336,24 @@ public class VideoQoETask extends MeasurementTask {
             e.printStackTrace();
         }
     }
+    if (!isDone()) {
+      PhoneUtils.getGlobalContext().stopService(videoIntent);
+      try {
+        Thread.sleep(2000);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+    }
+    Logger.e("Time elapsed: " + timeElapsed);
     Logger.e("Video QoE: result ready? " + this.isResultReceived);
     PhoneUtils.getGlobalContext().unregisterReceiver(broadcastReceiver);
+
+    if (process != null) {
+      Logger.e("pcap data captured!");
+      process.destroy();
+    }
     
-    if(isDone()){
+    if(this.isResultReceived){
         Logger.i("Video QoE: Successfully measured QoE data");
         PhoneUtils phoneUtils = PhoneUtils.getPhoneUtils();
         MeasurementResult result = new MeasurementResult(
@@ -296,13 +362,22 @@ public class VideoQoETask extends MeasurementTask {
                 VideoQoETask.TYPE, System.currentTimeMillis() * 1000,
                 TaskProgress.COMPLETED, this.measurementDesc);
 //        result.addResult(UpdateIntent.VIDEO_TASK_PAYLOAD_IS_SUCCEED, isSucceed);
-        result.addResult("video_num_frame_dropped", this.numFrameDropped);
+        result.addResult("time_elapsed", timeElapsed);
+        result.addResult("video_num_frame_dropped", ((double)this.numFrameDropped) / timeElapsed);
         result.addResult("video_initial_loading_time", this.initialLoadingTime);
-        result.addResult("video_rebuffer_times", this.rebufferTimes);
-        result.addResult("video_goodput_times", this.goodputTimestamps);
-        result.addResult("video_goodput_values", this.goodputValues);
-        result.addResult("video_bitrate_times", this.bitrateTimestamps);
-        result.addResult("video_bitrate_values", this.bitrateValues);
+        double rebufferTime = sum(this.rebufferTimes);
+        result.addResult("video_rebuffer_times", rebufferTime / (timeElapsed + rebufferTime));
+        result.addResult("video_rebuffer_times_detail", getDelimedStr(this.rebufferTimes, ","));
+        
+        result.addResult("video_goodput_times", getDelimedStr(this.goodputTimestamps, ","));
+        result.addResult("video_goodput_values", getDelimedStr(this.goodputValues, ","));
+        result.addResult("video_bitrate_times", getDelimedStr(this.bitrateTimestamps, ","));
+        result.addResult("video_bitrate_values", getDelimedStr(this.bitrateValues, ","));
+        QoEMetrics metrics = calcAvgBitrate(this.bitrateTimestamps, this.bitrateValues);
+        result.addResult("video_average_bitrate", metrics.averageBitrate);
+        result.addResult("video_num_bitrate_change", metrics.numBitrateChange);
+        result.addResult("video_bufferload_times", getDelimedStr(this.bufferLoadTimestamps, ","));
+        result.addResult("video_bufferload_values", getDelimedStr(this.bufferLoadValues, ","));
         if(this.bbaSwitchTime!=-1){
           result.addResult("video_bba_switch_time", this.bbaSwitchTime);
         }
@@ -322,8 +397,76 @@ public class VideoQoETask extends MeasurementTask {
         mrArray[0]=result;
     }
 
-//    PhoneUtils.getGlobalContext().stopService(new Intent(PhoneUtils.getGlobalContext(), PLTExecutorService.class));
+    if (!isDone()) {
+      PhoneUtils.getGlobalContext().stopService(new Intent(PhoneUtils.getGlobalContext(), VideoPlayerService.class));
+    }
     return mrArray;
+  }
+  
+  private double sum(ArrayList<Double> rebufferTimes2) {
+    double result = 0.0;
+    for (double d : rebufferTimes2) {
+      result += d;
+    }
+    return result;
+  }
+
+  private String getDelimedStr(List<?> list, String delim) {
+    StringBuilder sb = new StringBuilder();
+    for (Object obj : list) {
+      if (sb.length() > 0) sb.append(delim);
+      sb.append(obj);
+    }
+    return sb.toString();
+  }
+
+  class QoEMetrics {
+    public double averageBitrate;
+    public int numBitrateChange;
+    public QoEMetrics() {
+      this(-1.0, 0);
+    }
+    public QoEMetrics(double averageBitrate, int numBitrateChange) {
+      this.averageBitrate = averageBitrate;
+      this.numBitrateChange = numBitrateChange;
+    }
+  }
+  
+  private QoEMetrics calcAvgBitrate(ArrayList<String> timestamp, ArrayList<Integer> bitrate) {
+    if (timestamp.size() != bitrate.size()) {
+      Logger.e("timestamp = " + timestamp.size() + ", bitrate = " + bitrate.size());
+      return new QoEMetrics();
+    }
+    int length = timestamp.size();
+    String previousTimestamp = null;
+    double dataAmount = 0.0;
+    double timeAmount = 0.0;
+    int numBitrateChange = 0;
+    for (int i = 0; i < length; i++) {
+      String currentTimestamp = timestamp.get(i);
+      int currentBitrate = bitrate.get(i);
+      if (currentBitrate != 0) {
+        if (!previousTimestamp.equals(currentTimestamp)) {
+          double time = Double.parseDouble(currentTimestamp)
+              - Double.parseDouble(previousTimestamp);
+          double data = currentBitrate * time;
+          Logger.i("Time: " + time + ", Data: " + data);
+          dataAmount += data;
+          timeAmount += time;
+          numBitrateChange++;
+        }
+      }
+      previousTimestamp = currentTimestamp;
+    }
+    if (timeAmount > 1e-6) {
+      double avgBitrate = dataAmount / timeAmount;
+      Logger.e("Average bitrate: " + avgBitrate);
+      return new QoEMetrics(avgBitrate, numBitrateChange);
+    }
+    else {
+      Logger.e("Time is 0");
+      return new QoEMetrics();
+    }
   }
   
   private boolean isDone() {

@@ -15,6 +15,7 @@
  */
 package com.mobilyzer.util.video;
 
+import java.io.IOException;
 import java.util.HashMap;
 
 import com.mobilyzer.UpdateIntent;
@@ -25,6 +26,10 @@ import com.mobilyzer.util.video.player.DemoPlayer;
 import com.mobilyzer.util.video.player.DashVodRendererBuilder.AdaptiveType;
 import com.mobilyzer.util.video.player.DemoPlayer.RendererBuilder;
 import com.mobilyzer.util.video.util.DemoUtil;
+import com.squareup.okhttp.OkHttpClient;
+import com.squareup.okhttp.Request;
+import com.squareup.okhttp.Request.Builder;
+import com.squareup.okhttp.Response;
 import com.google.android.exoplayer.ExoPlayer;
 
 import android.app.Service;
@@ -47,6 +52,7 @@ public class VideoPlayerService extends Service implements DemoPlayer.Listener {
   
   private boolean enableBackgroundAudio = false;
 
+  private long startTimeFilter;
 //  private Uri contentUri;
 //  private int contentType;
 //  private String contentId;
@@ -58,17 +64,22 @@ public class VideoPlayerService extends Service implements DemoPlayer.Listener {
     Uri contentUri = intent.getData();
     int contentType = intent.getIntExtra(DemoUtil.CONTENT_TYPE_EXTRA, DemoUtil.TYPE_PROGRESSIVE);
     String contentId = intent.getStringExtra(DemoUtil.CONTENT_ID_EXTRA);
-    long startTimeFilter = intent.getLongExtra(DemoUtil.START_TIME_FILTER, 0l);
-        
+//    Uri contentUri = Uri.parse("https://www.youtube.com/watch?v=" + contentId);
+    
+    double energySaving = intent.getDoubleExtra(DemoUtil.ENERGY_SAVING_EXTRA, 1.0);
+    int bufferSegments = intent.getIntExtra(DemoUtil.BUFFER_SEGMENTS_EXTRA, 100);
 
-    DemoPlayer player = new DemoPlayer(getRendererBuilder(contentType, contentUri, contentId), startTimeFilter);
+    startTimeFilter = intent.getLongExtra(DemoUtil.START_TIME_FILTER, 0l);
+    
+    DemoPlayer player = new DemoPlayer(getRendererBuilder(contentType,
+        contentUri, contentId, energySaving, bufferSegments), startTimeFilter);
     EventLogger eventLogger = new EventLogger();
     playerMap.put(startTimeFilter, player);
     eventLoggerMap.put(startTimeFilter, eventLogger);
-    
-    
+
+
     preparePlayer(startTimeFilter);
-    
+
     return START_NOT_STICKY;
 
   }
@@ -84,15 +95,18 @@ public class VideoPlayerService extends Service implements DemoPlayer.Listener {
 
   // Internal methods
 
-  private RendererBuilder getRendererBuilder(int contentType, Uri contentUri, String contentId) {
+  private RendererBuilder getRendererBuilder(int contentType, Uri contentUri,
+      String contentId, double energySaving, int bufferSegments) {
     String userAgent = DemoUtil.getUserAgent(this);
     if (contentType == DemoUtil.TYPE_DASH_VOD) {
       return new DashVodRendererBuilder(userAgent, contentUri.toString(), contentId,
-          new WidevineTestMediaDrmCallback(contentId), null, AdaptiveType.CBA );
+          new WidevineTestMediaDrmCallback(contentId), null, AdaptiveType.CBA,
+          energySaving, bufferSegments );
     }
     else if (contentType == DemoUtil.TYPE_BBA){
       return new DashVodRendererBuilder(userAgent, contentUri.toString(), contentId,
-        new WidevineTestMediaDrmCallback(contentId), null, AdaptiveType.BBA);
+        new WidevineTestMediaDrmCallback(contentId), null, AdaptiveType.BBA,
+        energySaving, bufferSegments);
     }
     else if (contentType == DemoUtil.TYPE_PROGRESSIVE) {
       return new DefaultRendererBuilder(this, contentUri, null);
@@ -141,7 +155,6 @@ public class VideoPlayerService extends Service implements DemoPlayer.Listener {
       player.release();
       player = null;
       Intent videoResult = eventLogger.endSession(startTimeFilter);
-      videoResult.putExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_IS_SUCCEED, isSucceed);
       this.sendBroadcast(videoResult);
       eventLogger = null;
     }
