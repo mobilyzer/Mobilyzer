@@ -209,10 +209,10 @@ public class DashVodRendererBuilder implements RendererBuilder,
 
     // Build the video renderer.
 //    DataSource videoDataSource = new HttpDataSource(userAgent, null, bandwidthMeter);
-//    LoadControl loadControl = new DefaultLoadControl(new BufferPool(BUFFER_SEGMENT_SIZE), null, null,
-//        95000, 100000, 0.1f, 0.6f);
     LoadControl loadControl = new DefaultLoadControl(new BufferPool(BUFFER_SEGMENT_SIZE), null, null,
-        15000, 100000, 0.1f, 0.6f);
+        95000, 100000, 0.1f, 0.6f);
+//    LoadControl loadControl = new DefaultLoadControl(new BufferPool(BUFFER_SEGMENT_SIZE), null, null,
+//        15000, 100000, 0.1f, 0.6f);
     DataSource videoDataSource = new HttpDataSource(userAgent, null, videoBandwidthMeter);
     ChunkSource videoChunkSource;
     String mimeType = videoRepresentations[0].format.mimeType;

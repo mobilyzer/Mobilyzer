@@ -17,8 +17,10 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Formatter;
 import java.util.HashMap;
+import java.util.List;
 
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -45,6 +47,7 @@ import com.mobilyzer.util.Logger;
 import com.mobilyzer.util.MeasurementJsonConvertor;
 import com.mobilyzer.util.PhoneUtils;
 import com.mobilyzer.util.Util;
+import com.mobilyzer.util.Util.Burst;
 
 /**
  * POJO that represents the result of a measurement
@@ -499,10 +502,21 @@ public class MeasurementResult implements Parcelable {
       printer.println("");
 //      printer.println(UpdateIntent.VIDEO_TASK_PAYLOAD_IS_SUCCEED + ": " + values.get(UpdateIntent.VIDEO_TASK_PAYLOAD_IS_SUCCEED));
       printer.println("Num of frame dropped" + ": " + values.get("video_num_frame_dropped"));
+//      String frameDropStr = values.get("video_frame_drop_detail").replaceAll("^\"|\"$", "");
+//      List<String> frameDropTime = Arrays.asList(frameDropStr.split(","));
+      List<String> frameDropTime = Util.buildList(values.get("video_frame_drop_detail"));
+      List<Burst> burstList = Util.calculateFrameDropBurst(frameDropTime);
+      printer.println("FrameDrop Burst: " + Util.parseFrameDropBurstList(burstList));
+      
+      printer.println("Num of bursty frame dropped" + ": " + burstList.size());
       printer.println("Initial loading time" + ": " + values.get("video_initial_loading_time"));
       printer.println("Rebuffer times: " + values.get("video_rebuffer_times"));
-      printer.println("video_bitrate_times: " + values.get("video_bitrate_times"));
-      printer.println("video_bitrate_values: " + values.get("video_bitrate_values"));
+      
+      List<String> bitrateTsList = Util.buildList(values.get("video_bitrate_times"));
+      List<String> bitrateValList = Util.buildList(values.get("video_bitrate_values"));
+      printer.println("video_bitrate_times: " + Util.parseBitrateList(bitrateTsList, bitrateValList));
+//      printer.println("video_bitrate_times: " + values.get("video_bitrate_times"));
+//      printer.println("video_bitrate_values: " + values.get("video_bitrate_values"));
       printer.println("video average bitrate: " + values.get("video_average_bitrate"));
       printer.println("video # bitrate change: " + values.get("video_num_bitrate_change"));
 //      printer.println(UpdateIntent.VIDEO_TASK_PAYLOAD_GOODPUT_TIMESTAMP + ": " + values.get(UpdateIntent.VIDEO_TASK_PAYLOAD_GOODPUT_TIMESTAMP));

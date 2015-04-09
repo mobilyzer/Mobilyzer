@@ -19,6 +19,7 @@ import com.google.android.exoplayer.DummyTrackRenderer;
 import com.google.android.exoplayer.ExoPlaybackException;
 import com.google.android.exoplayer.ExoPlayer;
 import com.google.android.exoplayer.MediaCodecAudioTrackRenderer;
+import com.google.android.exoplayer.MediaFormat;
 import com.google.android.exoplayer.MediaCodecAudioTrackRenderer.AudioTrackInitializationException;
 import com.google.android.exoplayer.MediaCodecTrackRenderer.DecoderInitializationException;
 import com.google.android.exoplayer.MediaCodecVideoTrackRenderer;
@@ -698,6 +699,7 @@ public class DemoPlayer implements ExoPlayer.Listener, ChunkSampleSource.EventLi
     void onSwitchToSteadyState(long elapsedMs);
     void onAllChunksDownloaded(long totalBytes);
     void onBufferLoadChanged(long bufferDurationMs);
+    void onCodecChange(MediaFormat oldFormat, MediaFormat newFormat, long startTs, long endTs);
   }
 
   /**
@@ -1176,5 +1178,12 @@ public class DemoPlayer implements ExoPlayer.Listener, ChunkSampleSource.EventLi
       infoListener.onBufferLoadChanged(bufferDurationMs);
     }
     
+  }
+  
+  @Override
+  public void onCodecChange(MediaFormat oldFormat, MediaFormat newFormat, long startTs, long endTs) {
+    if (infoListener != null) {
+      infoListener.onCodecChange(oldFormat, newFormat, startTs, endTs);
+    }
   }
 }

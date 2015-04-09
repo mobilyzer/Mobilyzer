@@ -13,7 +13,10 @@
  */
 package com.mobilyzer.measurements;
 
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.InvalidClassException;
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
@@ -55,6 +58,9 @@ public class VideoQoETask extends MeasurementTask {
 
   private boolean isSucceed = false;
   private int numFrameDropped;
+  private List<String> frameDropTimes = new ArrayList<String>();
+  private int numBurstyFrameDropped;
+  private List<String> burstyFrameDropTimes = new ArrayList<String>();
   private double initialLoadingTime;
   private ArrayList<Double> rebufferTimes = new ArrayList<Double>();
   private ArrayList<String> goodputTimestamps = new ArrayList<String>();
@@ -225,21 +231,23 @@ public class VideoQoETask extends MeasurementTask {
     VideoQoEDesc taskDesc = (VideoQoEDesc) this.measurementDesc;
 
 
-    Process process = null;
-    try {
-//      process = new ProcessBuilder()
-//          .command("su", "-c", "/system/bin/tcpdump", "-s", "0", "-w", "hongyi_buffer_1.pcap")
-//          .start();
-      
-      process = Runtime.getRuntime().exec("su -c /system/bin/tcpdump -s 0 -w /sdcard/Mobiperf/hongyi_pcap_" + System.currentTimeMillis() + ".pcap");
-      Thread.sleep(5000);
-    } catch (IOException e1) {
-      Logger.e("Tcpdump start failed!");
-      return mrArray;
-    } catch (InterruptedException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
+//    Process tcpdump = null;
+//    Process cpuTrace = null;
+//    try {
+////      tcpdump = new ProcessBuilder()
+////          .command("su", "-c", "/system/bin/tcpdump", "-s", "0", "-w", "hongyi_buffer_1.pcap")
+////          .start();
+//      long ts = System.currentTimeMillis();
+//      tcpdump = Runtime.getRuntime().exec("su -c /system/bin/tcpdump -s 0 -w /sdcard/Mobiperf/hongyi_pcap_" + ts + ".pcap");
+//      cpuTrace = Runtime.getRuntime().exec("su -c /system/bin/vmstat -d 1 -r 0 > /sdcard/Mobiperf/hongyi_cpu_" + ts + ".txt");
+//    } catch (IOException e1) {
+//      Logger.e("Tcpdump start failed!");
+//      return mrArray;
+//    }
+    
+    long ts = System.currentTimeMillis();
+    runSuCommand("/system/bin/tcpdump -s 0 -i any -w /sdcard/Mobiperf/hongyi_pcap_" + ts + ".pcap");
+    runSuCommand("/system/bin/vmstat_flush -d 1 -r 0 | sh /system/bin/addTs.sh > /sdcard/Mobiperf/hongyi_cpu_" + ts + ".txt");
     
     Intent videoIntent = new Intent(PhoneUtils.getGlobalContext(), VideoPlayerService.class);
     videoIntent.setData(Uri.parse(taskDesc.contentURL));
@@ -265,6 +273,12 @@ public class VideoQoETask extends MeasurementTask {
             numFrameDropped = intent.getIntExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_NUM_FRAME_DROPPED, 0);
             Logger.d("Num frame dropped: " + numFrameDropped);
           }
+          if (intent.hasExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_FRAME_DROPPED_TIMESTAMP)){
+            String[] frameDropArray = intent.getStringArrayExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_FRAME_DROPPED_TIMESTAMP);
+            frameDropTimes = Arrays.asList(frameDropArray);
+            Logger.d("Num frame timestamps: " + frameDropTimes);
+          }
+          
           if (intent.hasExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_INITIAL_LOADING_TIME)){
             initialLoadingTime = intent.getDoubleExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_INITIAL_LOADING_TIME, 0.0);
             Logger.d("Initial Loading Time: " + initialLoadingTime);
@@ -326,7 +340,8 @@ public class VideoQoETask extends MeasurementTask {
 
 
     int timeElapsed = 0;
-    for(timeElapsed = 0; timeElapsed< 60 * 5;timeElapsed++){
+//    for(timeElapsed = 0; timeElapsed< 60 * 5;timeElapsed++){
+    for(timeElapsed = 0; timeElapsed< 30;timeElapsed++){
         if(isDone()){
             break;
         }
@@ -348,10 +363,16 @@ public class VideoQoETask extends MeasurementTask {
     Logger.e("Video QoE: result ready? " + this.isResultReceived);
     PhoneUtils.getGlobalContext().unregisterReceiver(broadcastReceiver);
 
-    if (process != null) {
-      Logger.e("pcap data captured!");
-      process.destroy();
-    }
+//    if (tcpdump != null) {
+//      Logger.e("pcap data captured!");
+//      tcpdump.destroy();
+//    }
+//    if (cpuTrace != null) {
+//      Logger.e("CPU trace captured!");
+//      cpuTrace.destroy();
+//    }
+    killProcess("tcpdump");
+    killProcess("vmstat");
     
     if(this.isResultReceived){
         Logger.i("Video QoE: Successfully measured QoE data");
@@ -361,18 +382,38 @@ public class VideoQoETask extends MeasurementTask {
                 phoneUtils.getDeviceProperty(this.getKey()),
                 VideoQoETask.TYPE, System.currentTimeMillis() * 1000,
                 TaskProgress.COMPLETED, this.measurementDesc);
+        result.addResult("timestamp", ts);
 //        result.addResult(UpdateIntent.VIDEO_TASK_PAYLOAD_IS_SUCCEED, isSucceed);
         result.addResult("time_elapsed", timeElapsed);
-        result.addResult("video_num_frame_dropped", ((double)this.numFrameDropped) / timeElapsed);
+//        result.addResult("video_num_frame_dropped", ((double)this.numFrameDropped) / timeElapsed);
+        result.addResult("video_num_frame_dropped", this.numFrameDropped);
+        
+        // Frame drop detail
+        List<String> frameDropTsList = new ArrayList<String>();
+        for (String fdTs : this.frameDropTimes) {
+          frameDropTsList.add(String.valueOf(Long.valueOf(fdTs) - ts));
+        }
+        result.addResult("video_frame_drop_detail", getDelimedStr(frameDropTsList, ","));
+//        result.addResult("video_frame_drop_detail", getDelimedStr(this.frameDropTimes, ","));
+        
         result.addResult("video_initial_loading_time", this.initialLoadingTime);
         double rebufferTime = sum(this.rebufferTimes);
-        result.addResult("video_rebuffer_times", rebufferTime / (timeElapsed + rebufferTime));
+//        result.addResult("video_rebuffer_times", rebufferTime / (timeElapsed + rebufferTime));
+        result.addResult("video_rebuffer_times", rebufferTime);
         result.addResult("video_rebuffer_times_detail", getDelimedStr(this.rebufferTimes, ","));
         
         result.addResult("video_goodput_times", getDelimedStr(this.goodputTimestamps, ","));
         result.addResult("video_goodput_values", getDelimedStr(this.goodputValues, ","));
-        result.addResult("video_bitrate_times", getDelimedStr(this.bitrateTimestamps, ","));
+        
+        // Bitrate variance
+        List<String> bitrateTsList = new ArrayList<String>();
+        for (String videoTs : this.bitrateTimestamps) {
+          bitrateTsList.add(String.valueOf(Long.valueOf(videoTs) - ts));
+        }
+        result.addResult("video_bitrate_times", getDelimedStr(bitrateTsList, ","));        
+//        result.addResult("video_bitrate_times", getDelimedStr(this.bitrateTimestamps, ","));
         result.addResult("video_bitrate_values", getDelimedStr(this.bitrateValues, ","));
+        
         QoEMetrics metrics = calcAvgBitrate(this.bitrateTimestamps, this.bitrateValues);
         result.addResult("video_average_bitrate", metrics.averageBitrate);
         result.addResult("video_num_bitrate_change", metrics.numBitrateChange);
@@ -439,6 +480,7 @@ public class VideoQoETask extends MeasurementTask {
     }
     int length = timestamp.size();
     String previousTimestamp = null;
+    int previousBitrate = 0;
     double dataAmount = 0.0;
     double timeAmount = 0.0;
     int numBitrateChange = 0;
@@ -449,7 +491,8 @@ public class VideoQoETask extends MeasurementTask {
         if (!previousTimestamp.equals(currentTimestamp)) {
           double time = Double.parseDouble(currentTimestamp)
               - Double.parseDouble(previousTimestamp);
-          double data = currentBitrate * time;
+//          double data = currentBitrate * time;
+          double data = previousBitrate * time;
           Logger.i("Time: " + time + ", Data: " + data);
           dataAmount += data;
           timeAmount += time;
@@ -457,6 +500,7 @@ public class VideoQoETask extends MeasurementTask {
         }
       }
       previousTimestamp = currentTimestamp;
+      previousBitrate = currentBitrate;
     }
     if (timeAmount > 1e-6) {
       double avgBitrate = dataAmount / timeAmount;
@@ -531,6 +575,42 @@ public class VideoQoETask extends MeasurementTask {
   @Override
   public long getDataConsumed() {
     return dataConsumed;
+  }
+
+  public void runSuCommand(String command) {
+    try {
+      Logger.v("run su commands No Line");
+      Process rootProc = Runtime.getRuntime().exec("su");
+      DataOutputStream os = new DataOutputStream(rootProc.getOutputStream());
+      os.writeBytes(command + "\n");
+      os.writeBytes("exit\n");
+      os.flush();
+      Logger.v("Su Commands End.");
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
+
+  public void killProcess(String keyword) {
+    try {
+      // Run ps to get the process list
+      Process proc = Runtime.getRuntime().exec("ps");
+      BufferedReader br = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+      String line;
+      // Parse process list to find tcpdump entry
+      while ((line = br.readLine()) != null) {
+        if (line.contains(keyword)) {
+          // Split the line by white space
+          String pid[] = line.split("\\s+");
+          // pid should be second string in line
+          String cmd = "kill " + pid[1];
+          runSuCommand(cmd);
+        }
+      }
+      br.close();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
   }
 
 }

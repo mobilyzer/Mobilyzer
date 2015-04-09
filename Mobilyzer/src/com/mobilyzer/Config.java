@@ -102,7 +102,7 @@ public interface Config {
   public static final long MAX_CHECKIN_RETRY_INTERVAL_SEC = 60L;
   public static final int MAX_CHECKIN_RETRY_COUNT = 3;
 //  public static final long PAUSE_BETWEEN_CHECKIN_CHANGE_MSEC = 1 * 60 * 1000L;
-  public static final long PAUSE_BETWEEN_CHECKIN_CHANGE_MSEC = 600 * 60 * 1000L;
+  public static final long PAUSE_BETWEEN_CHECKIN_CHANGE_MSEC = 600000 * 60 * 1000L;
   
   public static final int DEFAULT_DATA_MONITOR_PERIOD_DAY= 1;
   

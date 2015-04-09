@@ -20,6 +20,7 @@ import com.mobilyzer.util.video.player.DemoPlayer;
 import com.google.android.exoplayer.ExoPlayer;
 import com.google.android.exoplayer.MediaCodecAudioTrackRenderer.AudioTrackInitializationException;
 import com.google.android.exoplayer.MediaCodecTrackRenderer.DecoderInitializationException;
+import com.google.android.exoplayer.MediaFormat;
 import com.google.android.exoplayer.util.VerboseLogUtil;
 
 import android.content.Intent;
@@ -32,6 +33,7 @@ import java.io.IOException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 
 ///**
@@ -372,6 +374,7 @@ public class EventLogger implements DemoPlayer.Listener, DemoPlayer.InfoListener
   public static HashMap<String, Integer> Id2Bitrate = new HashMap<String, Integer>();
   
   private ArrayList<String> dropFrameTime;
+  private ArrayList<String> burstydropFrameTime;
   private ArrayList<Pair<String, Integer>> videoBitrateVarience;
   private ArrayList<Pair<String, Integer>> audioBitrateVarience;
   private double initialLoadingTime;
@@ -399,9 +402,18 @@ public class EventLogger implements DemoPlayer.Listener, DemoPlayer.InfoListener
   private long sessionStartTimeMs;
   private long[] loadStartTimeMs;
 
+
+  private boolean isFrameDropBurstLogged;
+  private List<Double> frameDropTsList;
+  private List<Pair<Integer, Integer>> codecChangeBitrateList;
+  private List<Long> codecChangeDelayList;
+  private static final int FRAME_DROP_THRESHOLD = 1;
+  private static final double FRAME_DROP_WINDOW = 1;
+  
   public EventLogger() {
     loadStartTimeMs = new long[DemoPlayer.RENDERER_COUNT];
     
+    this.burstydropFrameTime = new ArrayList<String>();
     this.dropFrameTime = new ArrayList<String>();
     this.videoBitrateVarience = new ArrayList<Pair<String, Integer>>();
     this.audioBitrateVarience = new ArrayList<Pair<String, Integer>>();
@@ -409,12 +421,18 @@ public class EventLogger implements DemoPlayer.Listener, DemoPlayer.InfoListener
     this.videoGoodput = new ArrayList<Pair<String, Double>>();
     this.audioGoodput = new ArrayList<Pair<String, Double>>();
     this.bufferLoad = new ArrayList<Pair<String, Long>>();
-    this.videoBitrateVarience.add(Pair.create("0.00", 0));
+//    this.videoBitrateVarience.add(Pair.create("0.00", 0));
     this.previousVideoBitrate = 0;
-    this.audioBitrateVarience.add(Pair.create("0.00", 0));
+//    this.audioBitrateVarience.add(Pair.create("0.00", 0));
     this.previousAudioBitrate = 0;
     this.switchToSteadyStateTime = -1;
     this.totalBytesDownloaded = 0;
+    
+    this.isFrameDropBurstLogged = false;
+    this.frameDropTsList = new ArrayList<Double>();
+    
+    this.codecChangeBitrateList = new ArrayList<Pair<Integer, Integer>>();
+    this.codecChangeDelayList = new ArrayList<Long>();
   }
   
   public void startSession() {
@@ -424,8 +442,10 @@ public class EventLogger implements DemoPlayer.Listener, DemoPlayer.InfoListener
 
   public Intent endSession(long startTimeFilter) {
     Log.d(TAG, "end [" + getSessionTimeString() + "]");
-    this.videoBitrateVarience.add(Pair.create(getSessionTimeString(), this.previousVideoBitrate));
-    this.audioBitrateVarience.add(Pair.create(getSessionTimeString(), this.previousAudioBitrate));
+    this.videoBitrateVarience.add(Pair.create(String.valueOf(System.currentTimeMillis()), this.previousVideoBitrate));
+    this.audioBitrateVarience.add(Pair.create(String.valueOf(System.currentTimeMillis()), this.previousAudioBitrate));
+//    this.videoBitrateVarience.add(Pair.create(getSessionTimeString(), this.previousVideoBitrate));
+//    this.audioBitrateVarience.add(Pair.create(getSessionTimeString(), this.previousAudioBitrate));
     return printStatInfo(startTimeFilter);
   }
 
@@ -440,6 +460,7 @@ public class EventLogger implements DemoPlayer.Listener, DemoPlayer.InfoListener
       case ExoPlayer.STATE_PREPARING:
 //        this.bitrateVarience.add(Pair.create("0.00", currentBitrate));
         this.initialLoadingTime_s = Double.parseDouble(getSessionTimeString());
+        this.videoBitrateVarience.add(Pair.create(String.valueOf(System.currentTimeMillis()), 0));
         break;
 
       case ExoPlayer.STATE_BUFFERING:
@@ -455,8 +476,10 @@ public class EventLogger implements DemoPlayer.Listener, DemoPlayer.InfoListener
         }
         break;
       case ExoPlayer.STATE_ENDED:
-        this.videoBitrateVarience.add(Pair.create(getSessionTimeString(), this.previousVideoBitrate));
-        this.audioBitrateVarience.add(Pair.create(getSessionTimeString(), this.previousAudioBitrate));
+        this.videoBitrateVarience.add(Pair.create(String.valueOf(System.currentTimeMillis()), this.previousVideoBitrate));
+        this.audioBitrateVarience.add(Pair.create(String.valueOf(System.currentTimeMillis()), this.previousAudioBitrate));
+//        this.videoBitrateVarience.add(Pair.create(getSessionTimeString(), this.previousVideoBitrate));
+//        this.audioBitrateVarience.add(Pair.create(getSessionTimeString(), this.previousAudioBitrate));
 //        printStatInfo();
         break;
     }
@@ -480,7 +503,15 @@ public class EventLogger implements DemoPlayer.Listener, DemoPlayer.InfoListener
     
     Intent videoQoEResult = new Intent();
     videoQoEResult.setAction(UpdateIntent.VIDEO_MEASUREMENT_ACTION + startTimeFilter);
+    
+    // frame drop
     videoQoEResult.putExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_NUM_FRAME_DROPPED, this.dropFrameTime.size());
+    String[] frameDropTimestamp = new String[this.dropFrameTime.size()];
+    for (int i = 0; i < this.dropFrameTime.size(); i++) {
+      frameDropTimestamp[i] = this.dropFrameTime.get(i);
+    }
+    videoQoEResult.putExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_FRAME_DROPPED_TIMESTAMP, frameDropTimestamp);
+    
     videoQoEResult.putExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_INITIAL_LOADING_TIME, this.initialLoadingTime);
     if(this.switchToSteadyStateTime!=-1){
       videoQoEResult.putExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_BBA_SWITCH_TIME, this.switchToSteadyStateTime);
@@ -511,7 +542,8 @@ public class EventLogger implements DemoPlayer.Listener, DemoPlayer.InfoListener
     counter=0;
     for (Pair<String, Integer> bitrateSample : this.videoBitrateVarience) {
       bitrateTimestamp[counter] = bitrateSample.first;
-      bitrateValue[counter] = bitrateSample.second;
+//      bitrateValue[counter] = bitrateSample.second;
+      bitrateValue[counter] = bitrateSample.second / 1000;
       counter++;
     }
     videoQoEResult.putExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_BITRATE_TIMESTAMP, bitrateTimestamp);
@@ -584,7 +616,8 @@ public class EventLogger implements DemoPlayer.Listener, DemoPlayer.InfoListener
   @Override
   public void onDroppedFrames(int count, long elapsed) {
     Log.d(TAG, "droppedFrames [" + getSessionTimeString() + ", " + count + "]");
-    this.dropFrameTime.add(getSessionTimeString());
+//    this.dropFrameTime.add(getSessionTimeString());
+    this.dropFrameTime.add(String.valueOf(System.currentTimeMillis()));
   }
 
   @Override
@@ -611,8 +644,9 @@ public class EventLogger implements DemoPlayer.Listener, DemoPlayer.InfoListener
     int currentBitrate = Id2Bitrate.get(formatId);
     Log.d(TAG, "videoFormat [" + getSessionTimeString() + ", " + formatId + ", " +
         Integer.toString(trigger) + ", " + currentBitrate / 1000 + "kbps" + "]");
-    String timestamp = getSessionTimeString();
-    this.videoBitrateVarience.add(Pair.create(timestamp, this.previousVideoBitrate));
+//    String timestamp = getSessionTimeString();
+    String timestamp = String.valueOf(System.currentTimeMillis());
+//    this.videoBitrateVarience.add(Pair.create(timestamp, this.previousVideoBitrate));
     this.videoBitrateVarience.add(Pair.create(timestamp, currentBitrate));
     this.previousVideoBitrate = currentBitrate;
   }
@@ -710,6 +744,20 @@ public class EventLogger implements DemoPlayer.Listener, DemoPlayer.InfoListener
     String timestamp = getSessionTimeString();
     Log.d(TAG, "buffer [" + timestamp + ", " + bufferDurationMs + "]");
     this.bufferLoad.add(Pair.create(timestamp, bufferDurationMs));
+  }
+
+  @Override
+  public void onCodecChange(MediaFormat oldFormat, MediaFormat newFormat, long startTs, long endTs) {
+    if (oldFormat != null && newFormat != null) {
+      Log.d(TAG, "" + oldFormat.width + "*" + oldFormat.height +
+          " -> " + newFormat.width + "*" + newFormat.height + " : " +
+          " codec change delay: " + (endTs - startTs));
+      Log.e("CodecReconfigurationLatency", "" + (endTs - startTs));
+      int oldBitrate = Resolution2Bitrate.get(Pair.create(oldFormat.width, oldFormat.height));
+      int newBitrate = Resolution2Bitrate.get(Pair.create(newFormat.width, newFormat.height));
+      this.codecChangeBitrateList.add(Pair.create(oldBitrate, newBitrate));
+      this.codecChangeDelayList.add(endTs - startTs);
+    }
   }
 
 }

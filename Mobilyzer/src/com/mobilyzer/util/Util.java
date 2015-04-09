@@ -26,7 +26,9 @@ import java.security.InvalidParameterException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
@@ -233,5 +235,100 @@ public class Util {
   public static long getCurrentRxTxBytes(){
     int uid = android.os.Process.myUid();
     return TrafficStats.getUidRxBytes(uid)+TrafficStats.getUidTxBytes(uid);
+  }
+  
+
+  public static class Burst {
+    public long timestamp;
+    public int num;
+  }
+  
+  private static final double BURST_WINDOW_LENGTH = 1000;
+  private static final int BURST_THRESHOLD = 1;
+  
+  public static List<Burst> calculateFrameDropBurst(List<String> frameDropTime) {
+    List<Burst> bursts = new ArrayList<Burst>();
+    Burst curBurst = new Burst();
+    if (frameDropTime.size() > 0) {
+      curBurst.timestamp = Long.parseLong(frameDropTime.get(0));
+      curBurst.num = 1;
+      for (int i = 1; i < frameDropTime.size(); i++) {
+        String ts_str = frameDropTime.get(i);
+        long ts = Long.parseLong(ts_str);
+        boolean isCurrentBurstFinished = (ts - curBurst.timestamp) > BURST_WINDOW_LENGTH;
+        if (isCurrentBurstFinished) {
+          if (curBurst.num > BURST_THRESHOLD) {
+            bursts.add(curBurst);
+          }
+          curBurst = new Burst();
+          curBurst.timestamp = ts;
+          curBurst.num = 1;
+        }
+        else {
+          curBurst.num++;
+        }
+      }
+      if (curBurst.num > BURST_THRESHOLD) {
+        bursts.add(curBurst);
+      }
+    }
+    return bursts;
+  }
+
+  public static List<String> buildList(String text) {
+    String frameDropStr = text.replaceAll("^\"|\"$", "");
+    if (!frameDropStr.equals("")) return Arrays.asList(frameDropStr.split(","));
+    else return new ArrayList<String>();
+  }
+  
+  public static String parseFrameDropBurstList(List<Burst> bursts) {
+    StringBuilder sb = new StringBuilder();
+
+    for (int i = 0; i < bursts.size(); i++) {
+      Burst b = bursts.get(i);
+      if (i != 0) {
+        sb.append(", ");
+      }
+      sb.append(b.timestamp).append(" : ").append(b.num);
+    }
+    return sb.toString();
+  }
+  
+  public static String parseBitrateList(List<String> tsList, List<String> valList) {
+    StringBuilder sb = new StringBuilder();
+    int len = Math.min(tsList.size(), valList.size());
+    for (int i = 0; i < len; i++) {
+      if (i != 0) {
+        sb.append(", ");
+      }
+      sb.append(tsList.get(i)).append(" : ").append(valList.get(i));
+    }
+    return sb.toString();
+  }
+
+  public static String parseFrameDropBurstTimestamp(List<Burst> bursts) {
+    StringBuilder sb = new StringBuilder();
+
+    for (int i = 0; i < bursts.size(); i++) {
+      Burst b = bursts.get(i);
+      if (i != 0) {
+        sb.append(",");
+      }
+      sb.append(b.timestamp);
+    }
+    return sb.toString();
+  }
+
+  public static String parseFrameDropBurstNum(List<Burst> bursts) {
+    StringBuilder sb = new StringBuilder();
+
+    for (int i = 0; i < bursts.size(); i++) {
+      Burst b = bursts.get(i);
+      if (i != 0) {
+        sb.append(",");
+      }
+      sb.append(b.num);
+    }
+    return sb.toString();
   }
 }
