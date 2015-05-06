@@ -87,8 +87,6 @@ public class VideoQoETask extends MeasurementTask {
     public String contentId;
     // The ABR algorithm for video playback
     public int contentType;
-    // The percentage of energy saving on radio energy consumption requested by user
-    public String energySaving;
     // The buffer size in # of buffer blocks
     public int bufferSegments;
 
@@ -124,10 +122,6 @@ public class VideoQoETask extends MeasurementTask {
         if ((val = params.get("content_type")) != null && Integer.parseInt(val) >= 0) {
           this.contentType = Integer.parseInt(val);
         }
-        this.energySaving = params.get("energy_saving");
-        if (this.energySaving != null && Integer.parseInt(this.energySaving) >= 100) {
-          this.energySaving = "100";
-        }
         if ((val = params.get("buffer_segments")) != null) {
           int num = Integer.parseInt(val);
           if (num >= 0 && num <= 200) {
@@ -141,7 +135,6 @@ public class VideoQoETask extends MeasurementTask {
         contentURL = in.readString();
         contentId = in.readString();
         contentType = in.readInt();
-        energySaving = in.readString();
         bufferSegments = in.readInt();
     }
 
@@ -162,7 +155,6 @@ public class VideoQoETask extends MeasurementTask {
         dest.writeString(this.contentURL);
         dest.writeString(this.contentId);
         dest.writeInt(this.contentType);
-        dest.writeString(this.energySaving);
         dest.writeInt(this.bufferSegments);
     }
   }
@@ -254,7 +246,6 @@ public class VideoQoETask extends MeasurementTask {
     videoIntent.putExtra(DemoUtil.CONTENT_ID_EXTRA, taskDesc.contentId);
     videoIntent.putExtra(DemoUtil.CONTENT_TYPE_EXTRA, taskDesc.contentType);
     videoIntent.putExtra(DemoUtil.START_TIME_FILTER, this.startTimeFilter);
-    videoIntent.putExtra(DemoUtil.ENERGY_SAVING_EXTRA, 1 - (Double.valueOf(taskDesc.energySaving) / 100));
     videoIntent.putExtra(DemoUtil.BUFFER_SEGMENTS_EXTRA, taskDesc.bufferSegments);
     PhoneUtils.getGlobalContext().startService(videoIntent);
 

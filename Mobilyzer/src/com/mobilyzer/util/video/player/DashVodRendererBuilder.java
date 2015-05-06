@@ -31,9 +31,7 @@ import com.google.android.exoplayer.chunk.ChunkSource;
 import com.google.android.exoplayer.chunk.Format;
 import com.google.android.exoplayer.chunk.FormatEvaluator;
 import com.google.android.exoplayer.chunk.FormatEvaluator.AdaptiveEvaluator;
-import com.google.android.exoplayer.chunk.FormatEvaluator.ScaledAdaptiveEvaluator;
 import com.google.android.exoplayer.chunk.FormatEvaluator.BufferBasedAdaptiveEvaluator;
-import com.google.android.exoplayer.chunk.FormatEvaluator.ScaledBufferBasedAdaptiveEvaluator;
 import com.google.android.exoplayer.chunk.MultiTrackChunkSource;
 import com.google.android.exoplayer.dash.DashChunkSource;
 import com.google.android.exoplayer.dash.mpd.AdaptationSet;
@@ -92,7 +90,6 @@ public class DashVodRendererBuilder implements RendererBuilder,
   private RendererBuilderCallback callback;
 
   private AdaptiveType adaptiveType;
-  private double energySaving = 1;
   private int bufferSegments = VIDEO_BUFFER_SEGMENTS;
   
   public DashVodRendererBuilder(String userAgent, String url, String contentId,
@@ -107,16 +104,8 @@ public class DashVodRendererBuilder implements RendererBuilder,
   
   public DashVodRendererBuilder(String userAgent, String url, String contentId,
       MediaDrmCallback drmCallback, TextView debugTextView, AdaptiveType adaptiveType, 
-      double energySaving) {
+      int bufferSegment) {
     this(userAgent, url, contentId, drmCallback, debugTextView, adaptiveType);
-    this.energySaving = energySaving;
-  }
-  
-  public DashVodRendererBuilder(String userAgent, String url, String contentId,
-      MediaDrmCallback drmCallback, TextView debugTextView, AdaptiveType adaptiveType, 
-      double energySaving, int bufferSegment) {
-    this(userAgent, url, contentId, drmCallback, debugTextView, adaptiveType);
-    this.energySaving = energySaving;
     this.bufferSegments = bufferSegment;
   }
 
@@ -208,7 +197,6 @@ public class DashVodRendererBuilder implements RendererBuilder,
     }
 
     // Build the video renderer.
-//    DataSource videoDataSource = new HttpDataSource(userAgent, null, bandwidthMeter);
     LoadControl loadControl = new DefaultLoadControl(new BufferPool(BUFFER_SEGMENT_SIZE), null, null,
         95000, 100000, 0.1f, 0.6f);
 //    LoadControl loadControl = new DefaultLoadControl(new BufferPool(BUFFER_SEGMENT_SIZE), null, null,
@@ -217,23 +205,13 @@ public class DashVodRendererBuilder implements RendererBuilder,
     ChunkSource videoChunkSource;
     String mimeType = videoRepresentations[0].format.mimeType;
     if (mimeType.equals(MimeTypes.VIDEO_MP4) || mimeType.equals(MimeTypes.VIDEO_WEBM)) {
-//      videoChunkSource = new DashChunkSource(videoDataSource,
-//          new AdaptiveEvaluator(bandwidthMeter), videoRepresentations);
       if (adaptiveType==AdaptiveType.CBA){
-//        videoChunkSource = new DashChunkSource(videoDataSource,
-//          new AdaptiveEvaluator(videoBandwidthMeter, manifest.duration,mainHandler, player), videoRepresentations);
         videoChunkSource = new DashChunkSource(videoDataSource,
-            new ScaledAdaptiveEvaluator(videoBandwidthMeter, this.energySaving, manifest.duration,mainHandler, player), videoRepresentations);
+            new AdaptiveEvaluator(videoBandwidthMeter, manifest.duration,mainHandler, player), videoRepresentations);
       }else{
-//        videoChunkSource = new DashChunkSource(videoDataSource,
-//          new BufferBasedAdaptiveEvaluator(videoBandwidthMeter, manifest.duration, mainHandler, player ), videoRepresentations);
-
-//        videoChunkSource = new DashChunkSource(videoDataSource,
-//          new ScaledBufferBasedAdaptiveEvaluator(videoBandwidthMeter, this.energySaving, manifest.duration, mainHandler, player ), videoRepresentations);
         videoChunkSource = new DashChunkSource(videoDataSource,
-            new ScaledBufferBasedAdaptiveEvaluator(videoBandwidthMeter, this.energySaving, manifest.duration, mainHandler, player, 15000, 80000 ),
+            new BufferBasedAdaptiveEvaluator(videoBandwidthMeter, manifest.duration, mainHandler, player, 15000, 80000 ),
             videoRepresentations);
-      
       }
     } else {
       throw new IllegalStateException("Unexpected mime type: " + mimeType);
@@ -241,47 +219,12 @@ public class DashVodRendererBuilder implements RendererBuilder,
     ChunkSampleSource videoSampleSource = new ChunkSampleSource(videoChunkSource, loadControl,
         this.bufferSegments * BUFFER_SEGMENT_SIZE, true, mainHandler, player,
         DemoPlayer.TYPE_VIDEO);
-//    MediaCodecVideoTrackRenderer videoRenderer = new MediaCodecVideoTrackRenderer(videoSampleSource,
-//        drmSessionManager, true, MediaCodec.VIDEO_SCALING_MODE_SCALE_TO_FIT, 5000,
-//        mainHandler, player, 50);
+    // set frame drop report threshold to 1
     MediaCodecVideoTrackRenderer videoRenderer = new MediaCodecVideoTrackRenderer(videoSampleSource,
         drmSessionManager, true, MediaCodec.VIDEO_SCALING_MODE_SCALE_TO_FIT, 5000,
         mainHandler, player, 1);
+    // We do not download audio track of the video
 
-//    // Build the audio renderer.
-//    final String[] audioTrackNames;
-//    final MultiTrackChunkSource audioChunkSource;
-//    final MediaCodecAudioTrackRenderer audioRenderer;
-//    if (audioRepresentationsList.isEmpty()) {
-//      audioTrackNames = null;
-//      audioChunkSource = null;
-//      audioRenderer = null;
-//    } else {
-////      DataSource audioDataSource = new HttpDataSource(userAgent, null, bandwidthMeter);
-//      DataSource audioDataSource = new HttpDataSource(userAgent, null, audioBandwidthMeter);
-//      audioTrackNames = new String[audioRepresentationsList.size()];
-//      ChunkSource[] audioChunkSources = new ChunkSource[audioRepresentationsList.size()];
-//      FormatEvaluator audioEvaluator = new FormatEvaluator.FixedEvaluator();
-//      for (int i = 0; i < audioRepresentationsList.size(); i++) {
-//        Representation representation = audioRepresentationsList.get(i);
-//        Format format = representation.format;
-//        audioTrackNames[i] = format.id + " (" + format.numChannels + "ch, " +
-//            format.audioSamplingRate + "Hz)";
-//        audioChunkSources[i] = new DashChunkSource(audioDataSource,
-//            audioEvaluator, representation);
-//      }
-//      audioChunkSource = new MultiTrackChunkSource(audioChunkSources);
-//      SampleSource audioSampleSource = new ChunkSampleSource(audioChunkSource, loadControl,
-//          AUDIO_BUFFER_SEGMENTS * BUFFER_SEGMENT_SIZE, true, mainHandler, player,
-//          DemoPlayer.TYPE_AUDIO);
-//      audioRenderer = new MediaCodecAudioTrackRenderer(audioSampleSource, drmSessionManager, true,
-//          mainHandler, player);
-//    }
-//
-//    // Build the debug renderer.
-//    TrackRenderer debugRenderer = debugTextView != null
-//        ? new DebugTrackRenderer(debugTextView, videoRenderer, videoSampleSource) : null;
-//
 //    // Invoke the callback.
     String[][] trackNames = new String[DemoPlayer.RENDERER_COUNT][];
 //    trackNames[DemoPlayer.TYPE_AUDIO] = audioTrackNames;

@@ -49,14 +49,8 @@ public class VideoPlayerService extends Service implements DemoPlayer.Listener {
   private HashMap<Long, DemoPlayer> playerMap = new HashMap<Long, DemoPlayer>();
   private HashMap<Long, SurfaceTexture> surfaceTextureMap = new HashMap<Long, SurfaceTexture>();
   private HashMap<Long, Surface> surfaceMap = new HashMap<Long, Surface>();
-  
-  private boolean enableBackgroundAudio = false;
 
   private long startTimeFilter;
-//  private Uri contentUri;
-//  private int contentType;
-//  private String contentId;
-//  private String startTimeFilter;
 
   @Override
   public int onStartCommand(Intent intent, int flags, int startId){
@@ -64,15 +58,13 @@ public class VideoPlayerService extends Service implements DemoPlayer.Listener {
     Uri contentUri = intent.getData();
     int contentType = intent.getIntExtra(DemoUtil.CONTENT_TYPE_EXTRA, DemoUtil.TYPE_PROGRESSIVE);
     String contentId = intent.getStringExtra(DemoUtil.CONTENT_ID_EXTRA);
-//    Uri contentUri = Uri.parse("https://www.youtube.com/watch?v=" + contentId);
     
-    double energySaving = intent.getDoubleExtra(DemoUtil.ENERGY_SAVING_EXTRA, 1.0);
     int bufferSegments = intent.getIntExtra(DemoUtil.BUFFER_SEGMENTS_EXTRA, 100);
 
     startTimeFilter = intent.getLongExtra(DemoUtil.START_TIME_FILTER, 0l);
     
     DemoPlayer player = new DemoPlayer(getRendererBuilder(contentType,
-        contentUri, contentId, energySaving, bufferSegments), startTimeFilter);
+        contentUri, contentId, bufferSegments), startTimeFilter);
     EventLogger eventLogger = new EventLogger();
     playerMap.put(startTimeFilter, player);
     eventLoggerMap.put(startTimeFilter, eventLogger);
@@ -96,17 +88,17 @@ public class VideoPlayerService extends Service implements DemoPlayer.Listener {
   // Internal methods
 
   private RendererBuilder getRendererBuilder(int contentType, Uri contentUri,
-      String contentId, double energySaving, int bufferSegments) {
+      String contentId, int bufferSegments) {
     String userAgent = DemoUtil.getUserAgent(this);
     if (contentType == DemoUtil.TYPE_DASH_VOD) {
       return new DashVodRendererBuilder(userAgent, contentUri.toString(), contentId,
           new WidevineTestMediaDrmCallback(contentId), null, AdaptiveType.CBA,
-          energySaving, bufferSegments );
+          bufferSegments);
     }
     else if (contentType == DemoUtil.TYPE_BBA){
       return new DashVodRendererBuilder(userAgent, contentUri.toString(), contentId,
         new WidevineTestMediaDrmCallback(contentId), null, AdaptiveType.BBA,
-        energySaving, bufferSegments);
+        bufferSegments);
     }
     else if (contentType == DemoUtil.TYPE_PROGRESSIVE) {
       return new DefaultRendererBuilder(this, contentUri, null);
@@ -211,176 +203,3 @@ public class VideoPlayerService extends Service implements DemoPlayer.Listener {
   }
 
 }
-
-///**
-// * An activity that plays media using {@link DemoPlayer}.
-// */
-//public class VideoPlayerService extends Service implements //SurfaceHolder.Callback,
-//    DemoPlayer.Listener {
-//
-//  private static final int MENU_GROUP_TRACKS = 1;
-//  private static final int ID_OFFSET = 2;
-//
-//  private EventLogger eventLogger;
-////  private TextView debugTextView;
-////  private TextView playerStateTextView;
-//
-//  private DemoPlayer player;
-////  private HashMap<String, DemoPlayer> playerMap = new HashMap<String, DemoPlayer>();
-//  private boolean playerNeedsPrepare;
-//  private boolean autoPlay = true;
-//  private int playerPosition;
-//  private boolean enableBackgroundAudio = false;
-//
-//  private Uri contentUri;
-//  private int contentType;
-//  private String contentId;
-//  
-////  private String startTimeFilter;
-//
-//  private SurfaceTexture mTexture;
-//  private Surface        mSurface;
-//
-//  private boolean isResultSent;
-//  @Override
-//  public int onStartCommand(Intent intent, int flags, int startId){
-//    Logger.i("Video Player service started!");
-//    contentUri = intent.getData();
-//    contentType = intent.getIntExtra(DemoUtil.CONTENT_TYPE_EXTRA, DemoUtil.TYPE_PROGRESSIVE);
-//    contentId = intent.getStringExtra(DemoUtil.CONTENT_ID_EXTRA);
-//    
-//    this.isResultSent = false;
-//    preparePlayer();
-//    
-//    return START_NOT_STICKY;
-//
-//  }
-//
-//  @Override
-//  public void onDestroy() {
-//    super.onDestroy();
-//    releasePlayer(true);
-//  }
-//
-//
-//  // Internal methods
-//
-//  private RendererBuilder getRendererBuilder() {
-//    String userAgent = DemoUtil.getUserAgent(this);
-//    if (this.contentType == DemoUtil.TYPE_DASH_VOD) {
-//      return new DashVodRendererBuilder(userAgent, contentUri.toString(), contentId,
-//          new WidevineTestMediaDrmCallback(contentId), null, AdaptiveType.CBA );
-//    }
-//    else if (this.contentType == DemoUtil.TYPE_BBA){
-//      return new DashVodRendererBuilder(userAgent, contentUri.toString(), contentId,
-//        new WidevineTestMediaDrmCallback(contentId), null, AdaptiveType.BBA);
-//    }
-//    else if (this.contentType == DemoUtil.TYPE_PROGRESSIVE) {
-//      return new DefaultRendererBuilder(this, contentUri, null);
-//    }
-//    else {
-//      return null;
-//    }
-//  }
-//
-//  private void preparePlayer() {
-//    if (player == null) {
-//      player = new DemoPlayer(getRendererBuilder());
-//      player.addListener(this);
-//      player.seekTo(playerPosition);
-//      playerNeedsPrepare = true;
-//      eventLogger = new EventLogger();
-//      eventLogger.startSession();
-//      player.addListener(eventLogger);
-//      player.setInfoListener(eventLogger);
-//      player.setInternalErrorListener(eventLogger);
-//    }
-//    if (playerNeedsPrepare) {
-//      player.prepare();
-//      playerNeedsPrepare = false;
-//    }
-//    int[] textures = new int[1];
-//    GLES20.glGenTextures(1, textures, 0);
-//    int textureID = textures[0];
-//    Log.e("TextureId", "" + textureID);
-//    mTexture = new SurfaceTexture(textureID);
-//    mSurface = new Surface(mTexture);
-//    player.setSurface(mSurface);
-//    maybeStartPlayback();
-//  }
-//
-//  private void maybeStartPlayback() {
-//    if (autoPlay) {
-//      player.setPlayWhenReady(true);
-//      autoPlay = false;
-//    }
-//  }
-//
-//  private void releasePlayer(boolean isSucceed) {
-//    if (player != null) {
-//      playerPosition = player.getCurrentPosition();
-//      player.release();
-//      player = null;
-//      if (!isResultSent) {
-//        Intent videoResult = eventLogger.endSession();
-//        videoResult.putExtra(UpdateIntent.VIDEO_TASK_PAYLOAD_IS_SUCCEED, isSucceed);
-//        this.sendBroadcast(videoResult);
-//        isResultSent = true;
-//      }
-//      eventLogger = null;
-//    }
-//  }
-//
-//  // DemoPlayer.Listener implementation
-//
-//  @Override
-//  public void onStateChanged(boolean playWhenReady, int playbackState) {
-//    String text = "playWhenReady=" + playWhenReady + ", playbackState=";
-//    switch(playbackState) {
-//      case ExoPlayer.STATE_BUFFERING:
-//        text += "buffering";
-//        break;
-//      case ExoPlayer.STATE_ENDED:
-//        text += "ended";
-//        break;
-//      case ExoPlayer.STATE_IDLE:
-//        text += "idle";
-//        break;
-//      case ExoPlayer.STATE_PREPARING:
-//        text += "preparing";
-//        break;
-//      case ExoPlayer.STATE_READY:
-//        text += "ready";
-//        break;
-//      default:
-//        text += "unknown";
-//        break;
-//    }
-//    Log.e("", text);
-//    
-//    if (playbackState == ExoPlayer.STATE_ENDED) {
-//      Log.e("", "Playback ended!");
-//      releasePlayer(true);
-//      this.stopSelf();
-//    }
-////    playerStateTextView.setText(text);
-//  }
-//
-//  @Override
-//  public void onError(Exception e) {
-//    Log.e("BgPlayerService", "Error occurs!");
-//    playerNeedsPrepare = true;
-//    releasePlayer(false);
-//    this.stopSelf();
-//  }
-//
-//  @Override
-//  public void onVideoSizeChanged(int width, int height) {
-//  }
-//
-//  @Override
-//  public IBinder onBind(Intent intent) {
-//    return null;
-//  }
-//
-//}
