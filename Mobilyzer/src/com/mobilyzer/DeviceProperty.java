@@ -43,7 +43,12 @@ public class DeviceProperty implements Parcelable {
   public int batteryLevel;
   public boolean isBatteryCharging;
   public String cellInfo;
+  public String cellRssi;
+  //wifi rssi
   public int rssi;
+  public String ssid;
+  public String bssid;
+  public String wifiIpAddress;
   // version of Mobilyzer
   public String mobilyzerVersion;
   // the set of apps on the device that are using Mobilyzer.
@@ -57,7 +62,7 @@ public class DeviceProperty implements Parcelable {
       String osVersion, String ipConnectivity, String dnResolvability, 
       double longtitude, double latitude, String locationType, 
       String networkType, String carrier, int batteryLevel, boolean isCharging,
-      String cellInfo, int rssi,
+      String cellInfo, String cellRssi, int rssi, String ssid, String bssid, String wifiIpAddress, 
       String mobilyzerVersion, HashSet<String> hostApps, String requestApp) {
     super();
     this.deviceId = deviceId;
@@ -73,7 +78,11 @@ public class DeviceProperty implements Parcelable {
     this.batteryLevel = batteryLevel;
     this.isBatteryCharging = isCharging;
     this.cellInfo = cellInfo;
+    this.cellRssi = cellRssi;
     this.rssi = rssi;
+    this.ssid = ssid;
+    this.bssid = bssid;
+    this.wifiIpAddress = wifiIpAddress;
     this.mobilyzerVersion = mobilyzerVersion;
     this.hostApps = new LinkedList<String>();
     for ( String hostApp : hostApps ) {
@@ -97,7 +106,11 @@ public class DeviceProperty implements Parcelable {
     batteryLevel = in.readInt();
     isBatteryCharging = in.readByte() != 0;
     cellInfo = in.readString();
+    cellRssi = in.readString();
     rssi = in.readInt();
+    ssid=in.readString();
+    bssid=in.readString();
+    wifiIpAddress=in.readString();
     mobilyzerVersion = in.readString();
     hostApps = new LinkedList<String>();
     in.readList(hostApps, loader);
@@ -135,7 +148,11 @@ public class DeviceProperty implements Parcelable {
     dest.writeInt(batteryLevel);
     dest.writeByte((byte) (isBatteryCharging ? 1 : 0));
     dest.writeString(cellInfo);
+    dest.writeString(cellRssi);
     dest.writeInt(rssi);
+    dest.writeString(ssid);
+    dest.writeString(bssid);
+    dest.writeString(wifiIpAddress);
     dest.writeString(mobilyzerVersion);
     dest.writeList(hostApps);
     dest.writeString(requestApp);
@@ -145,6 +162,9 @@ public class DeviceProperty implements Parcelable {
     this.registrationId=regid;
   }
 
+  public String getLocation(){
+	  return this.location.toString();
+  }
   
 }
 
@@ -184,5 +204,10 @@ class GeoLocation implements Parcelable {
     dest.writeDouble(longitude);
     dest.writeDouble(latitude);
   }
+  
+  @Override
+	public String toString() {
+		return latitude+","+longitude;
+	}
   
 }
