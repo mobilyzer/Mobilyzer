@@ -26,6 +26,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Vector;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,8 +41,12 @@ import org.json.JSONObject;
 import com.mobilyzer.Config;
 import com.mobilyzer.MeasurementTask;
 import com.mobilyzer.UpdateIntent;
+import com.mobilyzer.MeasurementResult.TaskProgress;
 import com.mobilyzer.gcm.GCMManager;
+import com.mobilyzer.measurements.PageLoadTimeTask;
+import com.mobilyzer.measurements.ParallelTask;
 import com.mobilyzer.measurements.RRCTask;
+import com.mobilyzer.measurements.SequentialTask;
 import com.mobilyzer.util.Logger;
 import com.mobilyzer.util.PhoneUtils;
 import com.mobilyzer.util.MeasurementJsonConvertor;
@@ -54,6 +59,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.IBinder;
 import android.os.Messenger;
 import android.os.Parcelable;
@@ -216,8 +222,8 @@ public class MeasurementScheduler extends Service {
 
 
         } else if (intent.getAction().equals(UpdateIntent.MEASUREMENT_PROGRESS_UPDATE_ACTION)) {
-          String taskid = intent.getStringExtra(UpdateIntent.TASKID_PAYLOAD);
           String taskKey = intent.getStringExtra(UpdateIntent.CLIENTKEY_PAYLOAD);
+          String taskid = intent.getStringExtra(UpdateIntent.TASKID_PAYLOAD);
           int priority =
               intent.getIntExtra(UpdateIntent.TASK_PRIORITY_PAYLOAD,
                   MeasurementTask.INVALID_PRIORITY);
@@ -227,8 +233,58 @@ public class MeasurementScheduler extends Service {
           if (intent.getStringExtra(UpdateIntent.TASK_STATUS_PAYLOAD).equals(Config.TASK_FINISHED)) {
             tasksStatus.put(taskid, TaskStatus.FINISHED);
             Parcelable[] results = intent.getParcelableArrayExtra(UpdateIntent.RESULT_PAYLOAD);
-            if (results != null) {
+            if (results != null && results.length!=0) {
               sendResultToClient(results, priority, taskKey, taskid);
+              Logger.i("Sending results to client...");
+//              if(intent.hasExtra(UpdateIntent.TASK_TYPE_PAYLOAD) && intent.hasExtra(UpdateIntent.TASK_DESC_PAYLOAD) && 
+//            		  (intent.getStringExtra(UpdateIntent.TASK_TYPE_PAYLOAD).equals(SequentialTask.TYPE) ||
+//            		   intent.getStringExtra(UpdateIntent.TASK_TYPE_PAYLOAD).equals(ParallelTask.TYPE))){
+//            	  boolean allSucceed=true;
+//					for (Object obj : results) {
+//						MeasurementResult r = (MeasurementResult) obj;
+//						allSucceed=allSucceed&(r.isSucceed());
+//					}
+//					
+//					MeasurementDesc seq_desc=(MeasurementDesc)intent.getParcelableExtra(UpdateIntent.TASK_DESC_PAYLOAD);
+//					
+//					MeasurementResult combinedResults=new MeasurementResult(phoneUtils.getDeviceInfo().deviceId, 
+//							((MeasurementResult)results[0]).getDeviceProperty() , intent.getStringExtra(UpdateIntent.TASK_TYPE_PAYLOAD), System.currentTimeMillis() * 1000,
+//							allSucceed? TaskProgress.COMPLETED: TaskProgress.FAILED, seq_desc);
+//
+//					for (int i=0;i<results.length;i++) {
+//						for (Entry<String, String> value : ((MeasurementResult)results[i]).getValues().entrySet()){
+//							combinedResults.addResult("value_"+i+"_"+value.getKey(), value.getValue());
+//						}
+//						combinedResults.addResult("type_"+i, ((MeasurementResult)results[i]).getType() );
+//						for (String param : ((MeasurementResult)results[i]).getMeasurementDesc().parameters.keySet()){
+//							combinedResults.addResult("param_"+i+"_"+param, ((MeasurementResult)results[i]).getMeasurementDesc().parameters.get(param));
+//						}
+//					}
+//					combinedResults.addResult("num_results", results.length);
+//					combinedResults.getMeasurementDesc().parameters=null;
+//					Logger.d("# of results: "+results.length);
+//					
+//					if(results.length==2){
+//						try {
+//							checkin.uploadSingleMeasurementResult(combinedResults, resourceCapManager);
+//						} catch (Exception e) {
+//							Logger.e("Failed to upload local event: "+e.getMessage());
+//						} 
+//						
+//						Parcelable[] newArray= new Parcelable[0];
+//						results=newArray;
+//					}
+//					else{
+//						Parcelable[] newArray= new Parcelable[1];
+//						newArray[0]=combinedResults;
+//						results=newArray;	
+//					}
+//					
+//					
+//					
+//              
+//              }
+              
 
               for (Object obj : results) {
                 try {
@@ -238,6 +294,8 @@ public class MeasurementScheduler extends Service {
                    * accepted by GAE server
                    */
                   result.getMeasurementDesc().parameters = null;
+                  result.getDeviceProperty().registrationId=checkin.gcm_registraion_id;
+                  Logger.d("REG ID: "+checkin.gcm_registraion_id);
                   String jsonResult = MeasurementJsonConvertor.encodeToJson(result).toString();
                   saveResultToFile(jsonResult);
                 } catch (JSONException e) {
@@ -427,6 +485,11 @@ public class MeasurementScheduler extends Service {
       while (task != null && task.timeFromExecution() <= 0) {
         mainQueue.poll();
         
+        if(task.getDescription().getType().equals(PageLoadTimeTask.TYPE) && Build.VERSION.SDK_INT <=Build.VERSION_CODES.JELLY_BEAN_MR2){
+            Logger.i("MeasurementScheduler: handleMeasurement: PageLoadTime task is only availabe on API level 19 and higher");
+            task=mainQueue.peek();
+            continue;
+          }
         if(task.getDescription().getType().equals(RRCTask.TYPE) && phoneUtils.getNetwork().equals(PhoneUtils.NETWORK_WIFI)){
           long updatedStartTime = System.currentTimeMillis() + (long) (10 * 60 * 1000);
           task.getDescription().startTime.setTime(updatedStartTime);
@@ -655,7 +718,6 @@ public class MeasurementScheduler extends Service {
         Logger.d("submitTask: adding to mainqueue, current is not null: "
             + current.getMeasurementType() + " " + getCurrentTaskStartTime());
         if (pendingTasks.containsKey(current)) {
-          Logger.d("submitTask: isDone?" + pendingTasks.get(current).isDone());
           if (pendingTasks.get(current).isDone()) {
             alarmManager.cancel(measurementIntentSender);
             alarmManager.set(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + 3 * 1000,
@@ -664,7 +726,6 @@ public class MeasurementScheduler extends Service {
             if (!current.getMeasurementType().equals(RRCTask.TYPE)
                 && new Date(System.currentTimeMillis() - Config.MAX_TASK_DURATION)
                     .after(getCurrentTaskStartTime())) {
-              Logger.d("submitTask: 1");
               pendingTasks.get(current).cancel(true);
               handleMeasurement();
 
@@ -672,11 +733,9 @@ public class MeasurementScheduler extends Service {
                 && new Date(System.currentTimeMillis()
                     - (Config.DEFAULT_RRC_TASK_DURATION + 15 * 60 * 1000))
                     .after(getCurrentTaskStartTime())) {
-              Logger.d("submitTask: 2");
               pendingTasks.get(current).cancel(true);
               handleMeasurement();
             } else {
-              Logger.d("submitTask: 3");
               alarmManager.set(AlarmManager.RTC_WAKEUP, System.currentTimeMillis()
                   + Config.MAX_TASK_DURATION / 2, measurementIntentSender);
             }
