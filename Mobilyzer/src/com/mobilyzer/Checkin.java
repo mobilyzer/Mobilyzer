@@ -18,6 +18,7 @@ package com.mobilyzer;
 import android.accounts.AuthenticatorException;
 import android.accounts.OperationCanceledException;
 import android.content.Context;
+import android.os.AsyncTask;
 
 import org.apache.http.HttpVersion;
 import org.apache.http.client.CookieStore;
@@ -298,29 +299,52 @@ public class Checkin {
     }
   }
   
-  public void uploadGCMMeasurementResult(MeasurementResult result, ResourceCapManager resourceCapManager)
-      throws IOException {
-    JSONObject resultJson;
+  
+  class NotUIBlockingResultUploader extends AsyncTask<String , Void, String> {
+
+	@Override
+	protected String doInBackground(String... results) {
+		if(results.length!=1){
+			return "";
+		}
+		String r=results[0];
+		String response="";
+		try {
+			response=serviceRequest("postmeasurement", r);
+		} catch (IOException e) {
+			Logger.e("Failed to upload local event: "+e.getMessage());
+		}
+		return response;
+	}
+  }
+  
+  
+  public void uploadSingleMeasurementResult(MeasurementResult result, ResourceCapManager resourceCapManager)
+      throws IOException, InterruptedException, ExecutionException {
+    
     result.getDeviceProperty().registrationId=gcm_registraion_id;
     try {
-      resultJson = MeasurementJsonConvertor.encodeToJson(result);
-      Logger.d("GCM Measurement result converted to json: "+resultJson.toString());
+      JSONArray resultArray= new JSONArray();
+      resultArray.put(MeasurementJsonConvertor.encodeToJson(result));
+      Logger.d("Single Measurement result converted to json: "+resultArray.toString());
       if (PhoneUtils.getPhoneUtils().getNetwork() != PhoneUtils.NETWORK_WIFI) {
-    	  resourceCapManager.updateDataUsage(resultJson.toString().length());
+    	  resourceCapManager.updateDataUsage(resultArray.toString().length());
       }
-      String response = serviceRequest("postgcmmeasurement", resultJson.toString());
+      
+      String response=new NotUIBlockingResultUploader().execute(resultArray.toString()).get();
+//      String response = serviceRequest("postmeasurement", resultJson.toString());
       try {
         JSONObject responseJson = new JSONObject(response);
         if (!responseJson.getBoolean("success")) {
-          throw new IOException("Failure posting gcm measurement result");
+          throw new IOException("Failure posting single measurement result");
         }
       } catch (JSONException e) {
         throw new IOException(e.getMessage());
       }
     } catch (JSONException e1) {
-      Logger.d("TaskSchedule.uploadGCMMeasurementResult() complete");
+      Logger.d("TaskSchedule.uploadSingleMeasurementResult() complete");
     }
-    Logger.d("TaskSchedule.uploadGCMMeasurementResult() complete");
+    Logger.d("TaskSchedule.uploadSingleMeasurementResult() complete");
     
   }
   
