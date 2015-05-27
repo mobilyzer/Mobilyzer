@@ -56,7 +56,7 @@ public class PageLoadTimeTask extends MeasurementTask {
 	private volatile ArrayList<String> resourceTimingResults;
 
 	
-	private long dataConsumed;
+//	private long dataConsumed;
 
 	/**
 	 * The description of PageLoadTime measurement
@@ -136,7 +136,7 @@ public class PageLoadTimeTask extends MeasurementTask {
 		resourceTimingResults= new ArrayList<String>();
 		startTimeFilter=System.currentTimeMillis();
 
-		dataConsumed=0;
+//		dataConsumed=0;
 
 		 this.duration=1000*60*4;
 	}
@@ -226,10 +226,10 @@ public class PageLoadTimeTask extends MeasurementTask {
 					 if (intent.hasExtra(UpdateIntent.PLT_TASK_PAYLOAD_RESULT_NAV)){
 						 String navigationStr=intent.getStringExtra(UpdateIntent.PLT_TASK_PAYLOAD_RESULT_NAV).substring(20);
 						 navigationTimingResults.add(navigationStr);
-						 if(intent.hasExtra(UpdateIntent.PLT_TASK_PAYLOAD_BYTE_USED)){
-							 dataConsumed+=intent.getIntExtra(UpdateIntent.PLT_TASK_PAYLOAD_BYTE_USED, 0);
-							 Logger.d("ashkan_plt: total data consumed: "+dataConsumed*2);
-						 }
+//						 if(intent.hasExtra(UpdateIntent.PLT_TASK_PAYLOAD_BYTE_USED)){
+////							 dataConsumed+=intent.getIntExtra(UpdateIntent.PLT_TASK_PAYLOAD_BYTE_USED, 0);
+////							 Logger.d("ashkan_plt: total data consumed: "+dataConsumed*2);
+//						 }
 						 
 						 Logger.d("ashkan_plt: >>>>navigationTimingResults: "+navigationTimingResults.size());
 					 }else if(intent.hasExtra(UpdateIntent.PLT_TASK_PAYLOAD_RESULT_RES)){
@@ -371,6 +371,11 @@ public class PageLoadTimeTask extends MeasurementTask {
 	  */
 	 @Override
 	 public long getDataConsumed() {
-		 return 2*dataConsumed;
+	   long avgTotalPageSize=1024*1024;
+	     if (((PageLoadTimeDesc)getDescription()).spdyTest){
+	       return 2*avgTotalPageSize;
+	     }else{
+	       return avgTotalPageSize;
+	     }
 	 }
 }
