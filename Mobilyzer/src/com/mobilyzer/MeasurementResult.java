@@ -39,6 +39,8 @@ import com.mobilyzer.measurements.PingTask.PingDesc;
 import com.mobilyzer.measurements.TCPThroughputTask.TCPThroughputDesc;
 import com.mobilyzer.measurements.TracerouteTask.TracerouteDesc;
 import com.mobilyzer.measurements.UDPBurstTask.UDPBurstDesc;
+import com.mobilyzer.measurements.VideoQoETask;
+import com.mobilyzer.measurements.VideoQoETask.VideoQoEDesc;
 import com.mobilyzer.util.Logger;
 import com.mobilyzer.util.MeasurementJsonConvertor;
 import com.mobilyzer.util.PhoneUtils;
@@ -224,6 +226,10 @@ public class MeasurementResult implements Parcelable {
   public String getParameter(String key) {
     return this.parameters.parameters.get(key);
   }
+  
+  public void setMeasurmentDesc(MeasurementDesc desc){
+	  this.parameters=desc;
+  }
 
   /* Add the measurement results of type String into the class */
   public void addResult(String resultType, Object resultVal) {
@@ -251,7 +257,10 @@ public class MeasurementResult implements Parcelable {
         getTCPThroughputResult(printer, values);
       } else if (type.equals(RRCTask.TYPE)){
         getRRCResult(printer, values);
-      } else {
+      } else if (type.equals(VideoQoETask.TYPE)) {
+        getVideoQoEResult(printer, values);
+      }
+      else {
         Logger.e("Failed to get results for unknown measurement type " + type);
       }
       return builder.toString();
@@ -480,6 +489,31 @@ public class MeasurementResult implements Parcelable {
     }
     printer.println("Results uploaded to server");
   }
+  private void getVideoQoEResult(StringBuilderPrinter printer, HashMap<String, String> values) {
+	    VideoQoEDesc desc = (VideoQoEDesc) parameters;
+	    printer.println("[Video QoE Measurement]");
+	    printer.println("Content ID: " + desc.contentId);
+	    printer.println("Streaming Algorithm: " + desc.contentType);
+	    printer.println("Timestamp: " + Util.getTimeStringFromMicrosecond(properties.timestamp));
+	    printIPTestResult(printer);
+
+	    if (taskProgress == TaskProgress.COMPLETED) {
+	      printer.println("");
+//	      printer.println(UpdateIntent.VIDEO_TASK_PAYLOAD_IS_SUCCEED + ": " + values.get(UpdateIntent.VIDEO_TASK_PAYLOAD_IS_SUCCEED));
+	      printer.println("Num of frame dropped" + ": " + values.get("video_num_frame_dropped"));
+	      printer.println("Initial loading time" + ": " + values.get("video_initial_loading_time"));
+//	      printer.println(UpdateIntent.VIDEO_TASK_PAYLOAD_REBUFFER_TIME + ": " + values.get(UpdateIntent.VIDEO_TASK_PAYLOAD_REBUFFER_TIME));
+//	      printer.println(UpdateIntent.VIDEO_TASK_PAYLOAD_GOODPUT_TIMESTAMP + ": " + values.get(UpdateIntent.VIDEO_TASK_PAYLOAD_GOODPUT_TIMESTAMP));
+//	      printer.println(UpdateIntent.VIDEO_TASK_PAYLOAD_GOODPUT_VALUE + ": " + values.get(UpdateIntent.VIDEO_TASK_PAYLOAD_GOODPUT_VALUE));
+//	      printer.println(UpdateIntent.VIDEO_TASK_PAYLOAD_BITRATE_TIMESTAMP + ": " + values.get(UpdateIntent.VIDEO_TASK_PAYLOAD_BITRATE_TIMESTAMP));
+//	      printer.println(UpdateIntent.VIDEO_TASK_PAYLOAD_BITRATE_VALUE + ": " + values.get(UpdateIntent.VIDEO_TASK_PAYLOAD_BITRATE_VALUE));
+	    } else if (taskProgress == TaskProgress.PAUSED) {
+	      printer.println("Video QoE task paused!");
+	    } else {
+	      printer.println("Error: " + values.get("error"));
+	    }
+	  }
+
   /**
    * Removes the quotes surrounding the string. If |str| is null, returns null.
    */

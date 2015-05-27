@@ -108,6 +108,14 @@ public abstract class MeasurementDesc implements Parcelable {
 
   }
   
+  public void setParameters(Map<String, String> newParams){
+	  this.parameters=newParams;
+  }
+  
+  public void setType(String type){
+	  this.type=type;
+  }
+  
   @Override
   public String toString() {
     String result=type+","+key+","+intervalSec+","+count+","+priority+","+contextIntervalSec+",";
