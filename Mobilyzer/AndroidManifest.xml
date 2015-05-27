@@ -3,8 +3,8 @@
     package="com.mobilyzer">
     
     <uses-sdk
-        android:minSdkVersion="12"
-        android:targetSdkVersion="14" />
+        android:minSdkVersion="14"
+        android:targetSdkVersion="19" />
     
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <uses-permission android:name="android.permission.BATTERY_STATS" />
@@ -53,6 +53,7 @@
 
         <service android:name="com.mobilyzer.gcm.GcmIntentService" />
         <service android:name="com.mobilyzer.PLTExecutorService" />
+        <service android:name="com.mobilyzer.util.video.VideoPlayerService" />
         <!--  <activity
             android:name="com.mobilyzer.util.CrosswalkActivity"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"
