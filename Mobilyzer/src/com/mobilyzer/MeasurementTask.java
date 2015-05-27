@@ -13,9 +13,11 @@ import com.mobilyzer.measurements.HttpTask;
 import com.mobilyzer.measurements.PageLoadTimeTask;
 import com.mobilyzer.measurements.PingTask;
 import com.mobilyzer.measurements.RRCTask;
+import com.mobilyzer.measurements.SequentialTask;
 import com.mobilyzer.measurements.TCPThroughputTask;
 import com.mobilyzer.measurements.TracerouteTask;
 import com.mobilyzer.measurements.UDPBurstTask;
+import com.mobilyzer.measurements.VideoQoETask;
 
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -56,7 +58,9 @@ public abstract class MeasurementTask
     measurementDescToType.put(UDPBurstTask.DESCRIPTOR, UDPBurstTask.TYPE);
     measurementTypes.put(RRCTask.TYPE, RRCTask.class);
     measurementTypes.put(PageLoadTimeTask.TYPE, PageLoadTimeTask.class);
+    measurementTypes.put(SequentialTask.TYPE, SequentialTask.class);
 //    measurementDescToType.put(PageLoadTimeTask.DESCRIPTOR, PageLoadTimeTask.TYPE);
+    measurementTypes.put(VideoQoETask.TYPE, VideoQoETask.class);
 
     // Hongyi: RRCTask is not accessible by users. So we don't put RRC descriptor
     // and type into this map
