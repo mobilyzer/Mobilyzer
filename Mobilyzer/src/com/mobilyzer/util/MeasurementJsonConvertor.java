@@ -25,12 +25,8 @@ import com.google.myjson.JsonParseException;
 import com.google.myjson.JsonPrimitive;
 import com.google.myjson.JsonSerializationContext;
 import com.google.myjson.JsonSerializer;
-
 import com.mobilyzer.MeasurementDesc;
 import com.mobilyzer.MeasurementTask;
-
-import android.content.Context;
-
 
 import org.json.JSONException;
 import org.json.JSONObject;
