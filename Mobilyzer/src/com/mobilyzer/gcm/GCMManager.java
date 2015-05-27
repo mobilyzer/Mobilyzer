@@ -28,7 +28,7 @@ public class GCMManager{
    * Substitute you own sender ID here. This is the project number you got
    * from the API Console"
    */
-  String SENDER_ID = "510377927595";
+  String SENDER_ID = "120699632611";
 
   
   GoogleCloudMessaging gcm;
