@@ -65,7 +65,7 @@ import com.mobilyzer.util.Logger;
 public final class API {
   public enum TaskType {
     DNSLOOKUP, HTTP, PING, TRACEROUTE, TCPTHROUGHPUT, UDPBURST,
-    PARALLEL, SEQUENTIAL, INVALID, PLT
+    PARALLEL, SEQUENTIAL, INVALID, PLT, VIDEOQOE
   }
 
   /**
