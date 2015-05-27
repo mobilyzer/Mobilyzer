@@ -1720,7 +1720,7 @@ public class RRCTask extends MeasurementTask {
       waitTime(wait * desc.GRANULARITY, true);
 
       // Send a bunch of large packets, all at once, and take measurements on the result
-      signalStrengthLarge = utils.getCurrentRssi();
+//      signalStrengthLarge = utils.getCurrentRssi();
       long[] retval = sendMultiPackets(serverAddr, desc.MAX, 10, desc.MIN, desc.port);
       packetsLostSmall = (int) retval[1];
       rttLargePacket = retval[0];
@@ -1729,7 +1729,7 @@ public class RRCTask extends MeasurementTask {
       waitTime(wait * desc.GRANULARITY, true);
 
       // Send a bunch of small packets, all at once, and take measurements on the result
-      signalStrengthSmall = utils.getCurrentRssi();
+//      signalStrengthSmall = utils.getCurrentRssi();
       retval = sendMultiPackets(serverAddr, desc.MIN, 10, desc.MIN, desc.port);
       packetsLostLarge = (int) retval[1];
       rttSmallPacket = retval[0];
