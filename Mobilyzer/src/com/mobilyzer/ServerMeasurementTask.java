@@ -24,6 +24,8 @@ import android.content.Intent;
 import com.mobilyzer.MeasurementResult.TaskProgress;
 import com.mobilyzer.exceptions.MeasurementError;
 import com.mobilyzer.exceptions.MeasurementSkippedException;
+import com.mobilyzer.measurements.ParallelTask;
+import com.mobilyzer.measurements.SequentialTask;
 import com.mobilyzer.util.Logger;
 import com.mobilyzer.util.PhoneUtils;
 
@@ -76,6 +78,11 @@ public class ServerMeasurementTask implements Callable<MeasurementResult[]> {
 					(int) realTask.getDescription().priority);
 			intent.putExtra(UpdateIntent.TASKID_PAYLOAD, realTask.getTaskId());
 			intent.putExtra(UpdateIntent.CLIENTKEY_PAYLOAD, realTask.getKey());
+			intent.putExtra(UpdateIntent.TASK_TYPE_PAYLOAD, realTask.getType());
+			
+//			if (realTask.getType().equals(SequentialTask.TYPE) || realTask.getType().equals(ParallelTask.TYPE)){
+//				intent.putExtra(UpdateIntent.TASK_DESC_PAYLOAD, realTask.getDescription());
+//			}
 
 			if (results != null) {
 				// Only single task can be paused
@@ -145,14 +152,16 @@ public class ServerMeasurementTask implements Callable<MeasurementResult[]> {
 					r.getDeviceProperty().dnResolvability = contextCollector.dnsConnectivity;
 					r.getDeviceProperty().ipConnectivity = contextCollector.ipConnectivity;
 				}
+				
 
 				if (PhoneUtils.getPhoneUtils().getNetwork() != PhoneUtils.NETWORK_WIFI) {
 					rManager.updateDataUsage(realTask.getDataConsumed());
 				}
-				if (realTask.getDescription().priority == MeasurementTask.GCM_PRIORITY) {
-					this.scheduler.checkin.uploadGCMMeasurementResult(
-							results[0], rManager);
-				}
+				
+//				if (realTask.getDescription().priority == MeasurementTask.GCM_PRIORITY) {
+//					this.scheduler.checkin.uploadGCMMeasurementResult(
+//							results[0], rManager);
+//				}
 				broadcastMeasurementEnd(results, null);
 			} catch (MeasurementError e) {
 				String error = "Server measurement " + realTask.getDescriptor()
