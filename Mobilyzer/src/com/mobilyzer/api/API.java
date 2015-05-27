@@ -33,6 +33,7 @@ import android.os.RemoteException;
 import android.os.Bundle;
 
 import com.mobilyzer.Config;
+import com.mobilyzer.MeasurementScheduler;
 import com.mobilyzer.MeasurementScheduler.DataUsageProfile;
 import com.mobilyzer.MeasurementTask;
 import com.mobilyzer.UpdateIntent;
@@ -199,7 +200,8 @@ public final class API {
     if (!isBindingToService && !isBound) {
       Logger.e("API-> bind() called 2");
       // Bind to the scheduler service if it is not bounded
-      Intent intent = new Intent("com.mobilyzer.MeasurementScheduler");
+//      Intent intent = new Intent("com.mobilyzer.MeasurementScheduler");
+      Intent intent = new Intent(applicationContext, MeasurementScheduler.class);
       intent.putExtra(UpdateIntent.CLIENTKEY_PAYLOAD, clientKey);
       intent.putExtra(UpdateIntent.VERSION_PAYLOAD, Config.version);
       /**
