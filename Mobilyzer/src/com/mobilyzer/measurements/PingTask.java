@@ -84,6 +84,7 @@ public class PingTask extends MeasurementTask{
     public int packetSizeByte = PingTask.DEFAULT_PING_PACKET_SIZE;  
     public int pingTimeoutSec = PingTask.DEFAULT_PING_TIMEOUT;
     public int pingTimeToLive= PingTask.DEFAULT_PING_TTL;
+    public double pingIcmpIntervalSec= Config.DEFAULT_INTERVAL_BETWEEN_ICMP_PACKET_SEC;
 
 
     public PingDesc(String key, Date startTime,
@@ -120,6 +121,10 @@ public class PingTask extends MeasurementTask{
         		Integer.parseInt(val) > 0) {
         	this.pingTimeToLive = Integer.parseInt(val);  
         }
+        if ((val = params.get("icmp_interval_sec")) != null && val.length() > 0 &&
+        		Double.parseDouble(val) > 0) {
+        	this.pingIcmpIntervalSec = Double.parseDouble(val);  
+        }
       } catch (NumberFormatException e) {
         throw new InvalidParameterException("PingTask cannot be created due to invalid params");
       }
@@ -137,6 +142,7 @@ public class PingTask extends MeasurementTask{
       packetSizeByte = in.readInt();
       pingTimeoutSec = in.readInt();
       pingTimeToLive = in.readInt();
+      pingIcmpIntervalSec = in.readDouble();
     }
 
     public static final Parcelable.Creator<PingDesc> CREATOR
@@ -158,6 +164,7 @@ public class PingTask extends MeasurementTask{
       dest.writeInt(packetSizeByte);
       dest.writeInt(pingTimeoutSec);
       dest.writeInt(pingTimeToLive);
+      dest.writeDouble(pingIcmpIntervalSec);
     }
   }
 
@@ -359,7 +366,7 @@ public class PingTask extends MeasurementTask{
     }
     try {
       String command = Util.constructCommand(pingTask.pingExe, "-i", 
-        Config.DEFAULT_INTERVAL_BETWEEN_ICMP_PACKET_SEC,
+        pingTask.pingIcmpIntervalSec,
         "-s", pingTask.packetSizeByte, "-w", pingTask.pingTimeoutSec, "-c", 
         Config.PING_COUNT_PER_MEASUREMENT, "-t" ,pingTask.pingTimeToLive, targetIp);
       Logger.i("Running: " + command);
