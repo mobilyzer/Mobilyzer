@@ -93,7 +93,7 @@ public class MeasurementScheduler extends Service {
   private long checkinIntervalSec;
   private long checkinRetryIntervalSec;
   private int checkinRetryCnt;
-  private CheckinTask checkinTask;
+  private CheckinThread checkinThread;
   private Calendar lastCheckinTime;
 
   private int batteryThreshold;
@@ -166,7 +166,6 @@ public class MeasurementScheduler extends Service {
     this.checkin = new Checkin(this);
     this.checkinRetryIntervalSec = Config.MIN_CHECKIN_RETRY_INTERVAL_SEC;
     this.checkinRetryCnt = 0;
-    this.checkinTask = new CheckinTask();
 
     this.batteryThreshold = -1;
     this.checkinIntervalSec = -1;
@@ -1239,7 +1238,13 @@ public class MeasurementScheduler extends Service {
     checkin.initializeAccountSelector();
   }
 
-  private class CheckinTask implements Runnable {
+  private class CheckinThread extends Thread {
+	  private boolean terminatedFlag = false;
+	  
+	  public boolean isTerminated(){
+		return terminatedFlag;
+	  }
+	  
     @Override
     public void run() {
       Logger.i("checking Speedometer service for new tasks");
@@ -1283,6 +1288,7 @@ public class MeasurementScheduler extends Service {
               Math.min(Config.MAX_CHECKIN_RETRY_INTERVAL_SEC, checkinRetryIntervalSec * 2);
         }
       } finally {
+    	  terminatedFlag = true;
         if (phoneUtils != null) {
           phoneUtils.releaseWakeLock();
         }
@@ -1371,7 +1377,10 @@ public class MeasurementScheduler extends Service {
      * The CPU can go back to sleep immediately after onReceive() returns. Acquire the wake lock for
      * the new thread here and release the lock when the thread finishes
      */
-    PhoneUtils.getPhoneUtils().acquireWakeLock();
-    new Thread(checkinTask).start();
+    if(checkinThread==null || checkinThread.isTerminated()){
+        PhoneUtils.getPhoneUtils().acquireWakeLock();
+        checkinThread = new CheckinThread();
+        checkinThread.start();
+    }
   }
 }
