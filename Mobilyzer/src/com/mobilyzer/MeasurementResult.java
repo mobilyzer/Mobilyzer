@@ -391,10 +391,13 @@ public class MeasurementResult implements Parcelable {
         String timeStr = removeQuotes(values.get(key));
         if (timeStr == null) {
           timeStr = "Unknown";
+          printer.println(hopInfo + "-1 ms");
+        }else{
+          float time = Float.parseFloat(timeStr);
+          printer.println(hopInfo + String.format("%6.2f", time) + " ms");  
         }
 
-        float time = Float.parseFloat(timeStr);
-        printer.println(hopInfo + String.format("%6.2f", time) + " ms");
+        
       }
     } else if (taskProgress == TaskProgress.PAUSED) {
       printer.println("Traceroute paused!");
