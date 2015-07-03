@@ -220,7 +220,7 @@ public class AccountSelector {
         // User input required. (A UI will pop up for user's consent to allow
         // this app access account information.)
         Logger.i("Starting account manager activity");
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TASK);
         context.startActivity(intent);
       } else {
         Logger.i("Executing getCookie task");
