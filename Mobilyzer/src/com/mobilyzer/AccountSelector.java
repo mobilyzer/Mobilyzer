@@ -221,6 +221,7 @@ public class AccountSelector {
         // this app access account information.)
         Logger.i("Starting account manager activity");
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
         context.startActivity(intent);
       } else {
         Logger.i("Executing getCookie task");
