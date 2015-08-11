@@ -120,9 +120,9 @@ public class ParallelTask extends MeasurementTask{
   
   protected ParallelTask(Parcel in) {
     super(in);
-    ClassLoader loader = Thread.currentThread().getContextClassLoader();
+//    ClassLoader loader = Thread.currentThread().getContextClassLoader();
     // we cannot directly cast Parcelable[] to MeasurementTask[]. Cast them one-by-one
-    Parcelable[] tempTasks = in.readParcelableArray(loader);
+    Parcelable[] tempTasks = in.readParcelableArray(MeasurementTask.class.getClassLoader());
     tasks = new ArrayList<MeasurementTask>();
     long maxDuration = 0;
     for ( Parcelable pTask : tempTasks ) {

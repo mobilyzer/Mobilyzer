@@ -219,8 +219,8 @@ public abstract class MeasurementTask
   }
 
   protected MeasurementTask(Parcel in) {
-    ClassLoader loader = Thread.currentThread().getContextClassLoader();
-    measurementDesc = in.readParcelable(loader);
+//    ClassLoader loader = Thread.currentThread().getContextClassLoader();
+    measurementDesc = in.readParcelable(MeasurementDesc.class.getClassLoader());
     taskId = in.readString();
   }
 

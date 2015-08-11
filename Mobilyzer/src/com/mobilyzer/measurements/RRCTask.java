@@ -165,7 +165,7 @@ public class RRCTask extends MeasurementTask {
 
     protected RRCDesc(Parcel in) {
       super(in);
-      ClassLoader loader = Thread.currentThread().getContextClassLoader();
+//      ClassLoader loader = Thread.currentThread().getContextClassLoader();
       echoHost = in.readString();
       target = in.readString();
       MIN = in.readInt();
@@ -180,7 +180,7 @@ public class RRCTask extends MeasurementTask {
       SIZES = in.readByte() != 0;
       RESULT_VISIBILITY = in.readByte() != 0;
       GIVEUP_THRESHHOLD = in.readInt();
-      Object[] temp = in.readArray(loader);
+      Object[] temp = in.readArray(Integer.class.getClassLoader());
       times = Arrays.copyOf(temp, temp.length, Integer[].class);
     }
 

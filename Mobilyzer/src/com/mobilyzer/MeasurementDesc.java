@@ -3,6 +3,7 @@ package com.mobilyzer;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 
 import android.os.Parcel;
@@ -132,7 +133,7 @@ public abstract class MeasurementDesc implements Parcelable {
    * @param in Parcel object containing measurement descriptor
    */
   protected MeasurementDesc(Parcel in) {
-    ClassLoader loader = Thread.currentThread().getContextClassLoader();
+//    ClassLoader loader = Thread.currentThread().getContextClassLoader();
     type = in.readString();
     key = in.readString();
     startTime = (Date) in.readSerializable();
@@ -141,7 +142,13 @@ public abstract class MeasurementDesc implements Parcelable {
     count = in.readLong();
     priority = in.readLong();
     contextIntervalSec = in.readInt();
-    parameters = in.readHashMap(loader);
+//    parameters = in.readHashMap();
+    parameters=new HashMap<String, String>();
+    int parametersSize = in.readInt();
+    
+    for (int i = 0; i < parametersSize; i++) {
+      parameters.put(in.readString(), in.readString());
+    }
   }
 
   @Override
@@ -159,6 +166,11 @@ public abstract class MeasurementDesc implements Parcelable {
     dest.writeLong(count);
     dest.writeLong(priority);
     dest.writeInt(contextIntervalSec);
-    dest.writeMap(parameters);
+//    dest.writeMap(parameters);
+    dest.writeInt(parameters.size());
+    for (String s: parameters.keySet()) {
+        dest.writeString(s);
+        dest.writeString(parameters.get(s));
+    }
   }
 }

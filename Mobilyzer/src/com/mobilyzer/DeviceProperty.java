@@ -16,8 +16,8 @@
 package com.mobilyzer;
 
 
+import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedList;
 
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -52,7 +52,7 @@ public class DeviceProperty implements Parcelable {
   // version of Mobilyzer
   public String mobilyzerVersion;
   // the set of apps on the device that are using Mobilyzer.
-  public LinkedList<String> hostApps;
+  public ArrayList<String> hostApps;
   // the app which requests this measurement
   public String requestApp;
   
@@ -84,7 +84,7 @@ public class DeviceProperty implements Parcelable {
     this.bssid = bssid;
     this.wifiIpAddress = wifiIpAddress;
     this.mobilyzerVersion = mobilyzerVersion;
-    this.hostApps = new LinkedList<String>();
+    this.hostApps = new ArrayList<String>();
     for ( String hostApp : hostApps ) {
       this.hostApps.add(hostApp);
     }
@@ -92,14 +92,14 @@ public class DeviceProperty implements Parcelable {
   }
 
   private DeviceProperty(Parcel in) {
-    ClassLoader loader = Thread.currentThread().getContextClassLoader();
+//    ClassLoader loader = Thread.currentThread().getContextClassLoader();
     deviceId = in.readString();
     appVersion = in.readString();
     timestamp = in.readLong();
     osVersion = in.readString();
     ipConnectivity = in.readString();
     dnResolvability = in.readString();
-    location = in.readParcelable(loader);
+    location = in.readParcelable(GeoLocation.class.getClassLoader());
     locationType = in.readString();
     networkType = in.readString();
     carrier = in.readString();
@@ -112,8 +112,10 @@ public class DeviceProperty implements Parcelable {
     bssid=in.readString();
     wifiIpAddress=in.readString();
     mobilyzerVersion = in.readString();
-    hostApps = new LinkedList<String>();
-    in.readList(hostApps, loader);
+    if(hostApps==null){
+      hostApps = new ArrayList<String>();
+    }
+    in.readStringList(hostApps);
     requestApp = in.readString();
   }
   
@@ -154,7 +156,7 @@ public class DeviceProperty implements Parcelable {
     dest.writeString(bssid);
     dest.writeString(wifiIpAddress);
     dest.writeString(mobilyzerVersion);
-    dest.writeList(hostApps);
+    dest.writeStringList(hostApps);
     dest.writeString(requestApp);
   }
   
