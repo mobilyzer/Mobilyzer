@@ -996,6 +996,8 @@ public class PhoneUtils {
 		} else {
 			location = getLocation();
 		}
+		
+		String networkCountryIso = telephonyManager.getNetworkCountryIso();
 
 //		NetworkInfo activeNetwork = connectivityManager.getActiveNetworkInfo();
 		String networkType = PhoneUtils.getPhoneUtils().getNetwork();
@@ -1019,7 +1021,7 @@ public class PhoneUtils {
 		return new DeviceProperty(getDeviceInfo().deviceId, versionName,
 				System.currentTimeMillis() * 1000, getVersionStr(), ipConnectivity,
 				dnResolvability, location.getLongitude(), location.getLatitude(), 
-				location.getProvider(), networkType, carrierName, 
+				location.getProvider(), networkType, carrierName, networkCountryIso,
 				utils.getCurrentBatteryLevel(), utils.isCharging(), 
 				utils.getCellInfo(false), getCellRssi(), getWifiRSSI(), getWifiSSID(), getWifiBSSID(), getWifiIpAddress(),
 				mobilyzerVersion, PhoneUtils.clientKeySet, requestApp);

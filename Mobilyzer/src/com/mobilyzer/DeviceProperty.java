@@ -40,6 +40,8 @@ public class DeviceProperty implements Parcelable {
   public String locationType;
   public String networkType;
   public String carrier;
+  // ISO country code equivalent of the current registered operator's MCC
+  public String countryCode;
   public int batteryLevel;
   public boolean isBatteryCharging;
   public String cellInfo;
@@ -61,7 +63,7 @@ public class DeviceProperty implements Parcelable {
   public DeviceProperty(String deviceId, String appVersion, long timeStamp, 
       String osVersion, String ipConnectivity, String dnResolvability, 
       double longtitude, double latitude, String locationType, 
-      String networkType, String carrier, int batteryLevel, boolean isCharging,
+      String networkType, String carrier, String countryCode, int batteryLevel, boolean isCharging,
       String cellInfo, String cellRssi, int rssi, String ssid, String bssid, String wifiIpAddress, 
       String mobilyzerVersion, HashSet<String> hostApps, String requestApp) {
     super();
@@ -75,6 +77,7 @@ public class DeviceProperty implements Parcelable {
     this.locationType = locationType;
     this.networkType = networkType;
     this.carrier = carrier;
+    this.countryCode = countryCode;
     this.batteryLevel = batteryLevel;
     this.isBatteryCharging = isCharging;
     this.cellInfo = cellInfo;
@@ -103,6 +106,7 @@ public class DeviceProperty implements Parcelable {
     locationType = in.readString();
     networkType = in.readString();
     carrier = in.readString();
+    countryCode = in.readString();
     batteryLevel = in.readInt();
     isBatteryCharging = in.readByte() != 0;
     cellInfo = in.readString();
@@ -147,6 +151,7 @@ public class DeviceProperty implements Parcelable {
     dest.writeString(locationType);
     dest.writeString(networkType);
     dest.writeString(carrier);
+    dest.writeString(countryCode);
     dest.writeInt(batteryLevel);
     dest.writeByte((byte) (isBatteryCharging ? 1 : 0));
     dest.writeString(cellInfo);
