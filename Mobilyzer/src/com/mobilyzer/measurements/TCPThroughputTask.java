@@ -17,7 +17,9 @@ import java.util.Random;
 
 import com.mobilyzer.MeasurementDesc;
 import com.mobilyzer.MeasurementResult;
+import com.mobilyzer.MeasurementScheduler;
 import com.mobilyzer.MeasurementTask;
+import com.mobilyzer.UpdateIntent;
 import com.mobilyzer.MeasurementResult.TaskProgress;
 import com.mobilyzer.exceptions.MeasurementError;
 import com.mobilyzer.util.Logger;
@@ -26,6 +28,7 @@ import com.mobilyzer.util.MeasurementJsonConvertor;
 import com.mobilyzer.util.PhoneUtils;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -88,6 +91,34 @@ public class TCPThroughputTask extends MeasurementTask {
   private long duration;
   private TaskProgress taskProgress;
   private volatile boolean stopFlag;
+  
+  private MeasurementScheduler scheduler = null;  // added by Clarence
+  private TaskProgress Intermediate_TaskProgress = TaskProgress.COMPLETED;  //added by Clarence
+  
+  //added by Clarence, add broadcast to send the intermediate results
+  
+  private void broadcastIntermediateMeasurement(MeasurementResult[] results, MeasurementScheduler scheduler) {
+	  this.scheduler = scheduler;
+      Intent intent = new Intent();
+      intent.setAction(UpdateIntent.MEASUREMENT_INTERMEDIATE_PROGRESS_UPDATE_ACTION);
+      //TODO fixed one value priority for all users task?
+      intent.putExtra(UpdateIntent.TASK_PRIORITY_PAYLOAD,
+        MeasurementTask.USER_PRIORITY);
+      intent.putExtra(UpdateIntent.TASKID_PAYLOAD, this.getTaskId());
+      intent.putExtra(UpdateIntent.CLIENTKEY_PAYLOAD, this.getKey());
+
+      if (results != null){
+    	  
+        //intent.putExtra(UpdateIntent.TASK_STATUS_PAYLOAD, Config.TASK_FINISHED);
+        intent.putExtra(UpdateIntent.INTERMEDIATE_RESULT_PAYLOAD, results);
+      
+      this.scheduler.sendBroadcast(intent);
+      }else{
+    	 intent.putExtra(UpdateIntent.INTERMEDIATE_RESULT_PAYLOAD, "No intermediate results are broadcasted");
+    	  
+     }
+
+  }
 
   // class constructor
   public TCPThroughputTask(MeasurementDesc desc) {
@@ -530,13 +561,17 @@ public class TCPThroughputTask extends MeasurementTask {
 
     long startTime = System.currentTimeMillis();
     long endTime = startTime;
+   
     int  data_limit_byte_up =
         (int)(((TCPThroughputDesc)measurementDesc).data_limit_mb_up
         *this.KBYTE*this.KBYTE);
     byte[] uplinkBuffer =
         new byte[((TCPThroughputDesc)measurementDesc).pkt_size_up_bytes];
     this.genRandomByteArray(uplinkBuffer);
+   
+    
     try {
+      
 
       long totalDuration = (long)(this.KSEC*
           ((TCPThroughputDesc)measurementDesc).duration_period_sec +
@@ -550,6 +585,10 @@ public class TCPThroughputTask extends MeasurementTask {
         oStream.write(uplinkBuffer, 0, uplinkBuffer.length);
         oStream.flush();
         endTime = System.currentTimeMillis();
+        
+   
+        
+        
 
         this.totalSendSize += ((TCPThroughputDesc)measurementDesc).pkt_size_up_bytes;
         if (this.DATA_LIMIT_ON &&
@@ -576,6 +615,9 @@ public class TCPThroughputTask extends MeasurementTask {
       byte [] resultMsg = new byte[this.BUFFER_SIZE];
       int resultMsgLen = iStream.read(resultMsg, 0, resultMsg.length);
       if (resultMsgLen > 0) {
+    	  
+    	MeasurementResult IntermediateResult = null;      //added by Clarence
+    	
         String resultMsgStr = new String(resultMsg).substring(0, resultMsgLen);
         // Sample result string is "1111.11#2222.22#3333.33";
         Logger.i("Uplink result from server is " + resultMsgStr);
@@ -585,6 +627,23 @@ public class TCPThroughputTask extends MeasurementTask {
           sampleResult = Double.valueOf(tps_result_str[i]);
           this.samplingResults = this.insertWithOrder(this.samplingResults,
             sampleResult);
+          
+        //added by Clarence
+          this.scheduler = this.getScheduler();  
+          if (this.scheduler != null){
+        	  PhoneUtils Intermediate_phoneUtils = PhoneUtils.getPhoneUtils();
+        	  IntermediateResult = new MeasurementResult(Intermediate_phoneUtils.getDeviceInfo().deviceId,
+        			  Intermediate_phoneUtils.getDeviceProperty(this.getKey()),TCPThroughputTask.TYPE,
+        			  System.currentTimeMillis()*1000,Intermediate_TaskProgress,this.measurementDesc);
+        	  IntermediateResult.addResult("tcp_speed_results", this.samplingResults);
+        	  IntermediateResult.addResult("data_limit_exceeded", this.DATA_LIMIT_EXCEEDED);
+        	  IntermediateResult.addResult("duration", this.taskDuration);
+        	  IntermediateResult.addResult("server_version", this.serverVersion);
+        	  MeasurementResult[] IM_mrArray = new MeasurementResult[1];
+          	  IM_mrArray[0] = IntermediateResult;
+          	  broadcastIntermediateMeasurement(IM_mrArray,this.scheduler); 
+        	  
+          }
         }
       }
       Logger.i("Total number of sampling result is " + this.samplingResults.size());
@@ -679,6 +738,9 @@ public class TCPThroughputTask extends MeasurementTask {
    * @param time period increment
    */
   private void updateSize(int delta) {
+	  
+	MeasurementResult IntermediateResult = null;      //added by Clarence
+	
     double gtime = System.currentTimeMillis() - this.taskStartTime;
     //ignore slow start
     if (gtime<((TCPThroughputDesc)measurementDesc).slow_start_period_sec*this.KSEC)
@@ -696,6 +758,24 @@ public class TCPThroughputTask extends MeasurementTask {
       this.samplingResults = this.insertWithOrder(this.samplingResults, throughput);
       this.accumulativeSize = 0;
       this.startSampleTime = System.currentTimeMillis();
+      
+      //added by Clarence
+      this.scheduler = this.getScheduler();  
+      if (this.scheduler != null){
+    	  PhoneUtils Intermediate_phoneUtils = PhoneUtils.getPhoneUtils();
+    	  IntermediateResult = new MeasurementResult(Intermediate_phoneUtils.getDeviceInfo().deviceId,
+    			  Intermediate_phoneUtils.getDeviceProperty(this.getKey()),TCPThroughputTask.TYPE,
+    			  System.currentTimeMillis()*1000,Intermediate_TaskProgress,this.measurementDesc);
+    	  IntermediateResult.addResult("tcp_speed_results", this.samplingResults);
+    	  IntermediateResult.addResult("data_limit_exceeded", this.DATA_LIMIT_EXCEEDED);
+    	  IntermediateResult.addResult("duration", time);
+    	  IntermediateResult.addResult("server_version", this.serverVersion);
+    	  MeasurementResult[] IM_mrArray = new MeasurementResult[1];
+      	  IM_mrArray[0] = IntermediateResult;
+      	  broadcastIntermediateMeasurement(IM_mrArray,this.scheduler); 
+    	  
+      }
+      
     }  
   }
 

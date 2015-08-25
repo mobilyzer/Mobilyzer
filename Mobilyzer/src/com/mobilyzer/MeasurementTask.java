@@ -29,6 +29,8 @@ public abstract class MeasurementTask
       Parcelable {
   protected MeasurementDesc measurementDesc;
   protected String taskId;
+  
+  private MeasurementScheduler scheduler; // added by Clarence 
 
 
   public static final int USER_PRIORITY = Integer.MIN_VALUE;
@@ -113,6 +115,15 @@ public abstract class MeasurementTask
 
   public void setKey(String key) {
     this.measurementDesc.key = key;
+  }
+  
+  // added by Clarence, pass scheduler to every specific task
+  public void setScheduler(MeasurementScheduler scheduler) {
+	    this.scheduler = scheduler;
+  }
+  
+  public MeasurementScheduler getScheduler() {
+	  return this.scheduler;
   }
 
 

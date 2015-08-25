@@ -169,6 +169,7 @@ public class SequentialTask extends MeasurementTask{
     try {
       //      futures=executor.invokeAll(this.tasks,timeout,TimeUnit.MILLISECONDS);
       for(MeasurementTask mt: tasks){
+    	mt.setScheduler(this.getScheduler());
         if(stopFlag){
           throw new MeasurementError("Cancelled");
         }

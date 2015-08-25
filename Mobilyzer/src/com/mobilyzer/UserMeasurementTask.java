@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.Callable;
 
+import android.content.Context;
 import android.content.Intent;
 
 import com.mobilyzer.MeasurementResult.TaskProgress;
@@ -33,6 +34,7 @@ public class UserMeasurementTask implements Callable<MeasurementResult[]> {
   public UserMeasurementTask(MeasurementTask task,
                              MeasurementScheduler scheduler) {
     realTask = task;
+    realTask.setScheduler(scheduler);  //added by Clarence
     this.scheduler = scheduler;  
     this.contextCollector= new ContextCollector();
   }
@@ -48,7 +50,10 @@ public class UserMeasurementTask implements Callable<MeasurementResult[]> {
     intent.putExtra(UpdateIntent.TASK_STATUS_PAYLOAD, Config.TASK_STARTED);
     intent.putExtra(UpdateIntent.TASKID_PAYLOAD, realTask.getTaskId());
     intent.putExtra(UpdateIntent.CLIENTKEY_PAYLOAD, realTask.getKey());
+//    Context context = scheduler.getApplicationContext();
+//    context.sendBroadcast(intent);
     scheduler.sendBroadcast(intent);
+    
   }
 
   /**
@@ -96,9 +101,12 @@ public class UserMeasurementTask implements Callable<MeasurementResult[]> {
       ArrayList<HashMap<String, String>> contextResults =
           contextCollector.stopCollector();
       for (MeasurementResult r: results){
+    	String testIntermediate1 = r.toString();
         r.addContextResults(contextResults);
         r.getDeviceProperty().dnResolvability=contextCollector.dnsConnectivity;
         r.getDeviceProperty().ipConnectivity=contextCollector.ipConnectivity;
+        String testIntermediate2 = r.toString();
+        
       } 
     } catch (MeasurementError e) {
       Logger.e("User measurement " + realTask.getDescriptor() + " has failed");

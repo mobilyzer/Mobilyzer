@@ -38,6 +38,7 @@ public class ServerMeasurementTask implements Callable<MeasurementResult[]> {
 	public ServerMeasurementTask(MeasurementTask task,
 			MeasurementScheduler scheduler, ResourceCapManager manager) {
 		realTask = task;
+		realTask.setScheduler(null);  //added by Clarence
 		this.scheduler = scheduler;
 		this.contextCollector = new ContextCollector();
 		this.rManager = manager;

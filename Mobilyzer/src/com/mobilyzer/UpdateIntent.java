@@ -44,6 +44,8 @@ public class UpdateIntent extends Intent {
   public static final String VIDEO_TASK_PAYLOAD_REBUFFER_TIME = "VIDEO_TASK_PAYLOAD_REBUFFER_TIME";
   public static final String VIDEO_TASK_PAYLOAD_BBA_SWITCH_TIME = "VIDEO_TASK_PAYLOAD_BBA_SWITCH_TIME";
   public static final String VIDEO_TASK_PAYLOAD_BYTE_USED = "VIDEO_TASK_PAYLOAD_BYTE_USED";
+  //added by Clarence
+  public static final String INTERMEDIATE_RESULT_PAYLOAD = "INTERMEDIATE_RESULT_PAYLOAD";
   
   
   // Different types of actions that this intent can represent:
@@ -81,6 +83,11 @@ public class UpdateIntent extends Intent {
       PACKAGE_PREFIX + ".DATA_USAGE_ACTION";
   public static final String AUTH_ACCOUNT_ACTION =
       PACKAGE_PREFIX + ".AUTH_ACCOUNT_ACTION";
+  
+  
+  // added by Clarence
+  public static final String MEASUREMENT_INTERMEDIATE_PROGRESS_UPDATE_ACTION =
+	      APP_PREFIX + ".MEASUREMENT_INTERMEDIATE_PROGRESS_UPDATE_ACTION";
 
   /**
    * Creates an intent of the specified action with an optional message

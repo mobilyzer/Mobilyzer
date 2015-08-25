@@ -15,6 +15,7 @@
 
 package com.mobilyzer.measurements;
 
+import android.content.Intent;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Log;
@@ -23,7 +24,9 @@ import android.util.Log;
 import com.mobilyzer.Config;
 import com.mobilyzer.MeasurementDesc;
 import com.mobilyzer.MeasurementResult;
+import com.mobilyzer.MeasurementScheduler;
 import com.mobilyzer.MeasurementTask;
+import com.mobilyzer.UpdateIntent;
 import com.mobilyzer.MeasurementResult.TaskProgress;
 import com.mobilyzer.exceptions.MeasurementError;
 import com.mobilyzer.util.Logger;
@@ -70,6 +73,32 @@ public class PingTask extends MeasurementTask{
   private String targetIp = null;
   //Track data consumption for this task to avoid exceeding user's limit  
   private long dataConsumed;
+  
+  
+  private MeasurementScheduler scheduler = null;  // added by Clarence
+  
+  private void broadcastIntermediateMeasurement(MeasurementResult[] results, MeasurementScheduler scheduler) {
+	  this.scheduler = scheduler;
+      Intent intent = new Intent();
+      intent.setAction(UpdateIntent.MEASUREMENT_INTERMEDIATE_PROGRESS_UPDATE_ACTION);
+      //TODO fixed one value priority for all users task?
+      intent.putExtra(UpdateIntent.TASK_PRIORITY_PAYLOAD,
+        MeasurementTask.USER_PRIORITY);
+      intent.putExtra(UpdateIntent.TASKID_PAYLOAD, this.getTaskId());
+      intent.putExtra(UpdateIntent.CLIENTKEY_PAYLOAD, this.getKey());
+
+      if (results != null){
+    	  
+        //intent.putExtra(UpdateIntent.TASK_STATUS_PAYLOAD, Config.TASK_FINISHED);
+        intent.putExtra(UpdateIntent.INTERMEDIATE_RESULT_PAYLOAD, results);
+      
+      this.scheduler.sendBroadcast(intent);
+      }else{
+    	 intent.putExtra(UpdateIntent.INTERMEDIATE_RESULT_PAYLOAD, "No intermediate results are broadcasted");
+    	  
+     }
+
+    }
   
   /**
    * Encode ping specific parameters, along with common parameters inherited from MeasurmentDesc
@@ -356,6 +385,11 @@ public class PingTask extends MeasurementTask{
     PingDesc pingTask = (PingDesc) this.measurementDesc;
     String errorMsg = "";
     MeasurementResult measurementResult = null;
+    
+    MeasurementResult IM_measurementResult = null;  //added by Clarence
+    MeasurementResult[] IM_result = null;
+    IM_result = new MeasurementResult[1];
+    
     // TODO(Wenjie): Add a exhaustive list of ping locations for different
     //               Android phones
     pingTask.pingExe = Util.pingExecutableBasedOnIPType(ipByteLen);
@@ -384,11 +418,13 @@ public class PingTask extends MeasurementTask{
       ArrayList<Integer> receivedIcmpSeq = new ArrayList<Integer>();
       double packetLoss = Double.MIN_VALUE;
       int packetsSent = Config.PING_COUNT_PER_MEASUREMENT;
+      
       // Process each line of the ping output and store the rrt in array rrts.
       while ((line = br.readLine()) != null) {
         // Ping prints a number of 'param=value' pairs, among which we only need
         // the 'time=rrt_val' pair
         String[] extractedValues = Util.extractInfoFromPingOutput(line);
+       
         if (extractedValues != null) {
           int curIcmpSeq = Integer.parseInt(extractedValues[0]);
           double rrtVal = Double.parseDouble(extractedValues[1]);
@@ -409,6 +445,18 @@ public class PingTask extends MeasurementTask{
           int packetsReceived = packetLossInfo[1];
           packetLoss = 1 - ((double) packetsReceived / (double) packetsSent);
         }
+        this.scheduler = this.getScheduler();
+        if ( this.scheduler != null ){
+        	if (rrts.size() >= 2  && (rrts.size() < Config.PING_COUNT_PER_MEASUREMENT) && (extractedValues != null) ){
+        		IM_measurementResult = constructResult(rrts,packetLoss,
+            			rrts.size(),PING_METHOD_CMD);
+        		IM_result[0] = IM_measurementResult;
+        		broadcastIntermediateMeasurement(IM_result,this.scheduler);
+        		
+        		
+        	}
+        }
+        //IM_packetsSent++;
 
         Logger.i(line);
       }
@@ -452,6 +500,10 @@ public class PingTask extends MeasurementTask{
     ArrayList<Double> rrts = new ArrayList<Double>();
     String errorMsg = "";
     MeasurementResult result = null;
+    double packetLoss = Double.MIN_VALUE;           //added by Clarence
+    MeasurementResult IM_measurementResult = null;  //added by Clarence
+    MeasurementResult[] IM_result = null;
+    IM_result = new MeasurementResult[1];
 
     try {       
       int timeOut = (int) (3000 * (double) pingTask.pingTimeoutSec /
@@ -466,11 +518,28 @@ public class PingTask extends MeasurementTask{
         if (status) {
           totalPingDelay += rrtVal;
           rrts.add((double) rrtVal);
+          packetLoss = 1 -
+                ((double) rrts.size() / (i+1));
+          dataConsumed += pingTask.packetSizeByte * (i+1) * 2;
+          this.scheduler = this.getScheduler();
+          if ( this.scheduler != null){
+        	  IM_measurementResult = constructResult(rrts,packetLoss,
+            			(i+1),PING_METHOD_JAVA);
+              IM_result[0] = IM_measurementResult;
+              broadcastIntermediateMeasurement(IM_result,this.scheduler);
+        	  
+          }
+          
+          
         }
       }
       Logger.i("java ping succeeds");
-      double packetLoss = 1 -
-          ((double) rrts.size() / (double) Config.PING_COUNT_PER_MEASUREMENT);
+//      double packetLoss = 1 -
+//          ((double) rrts.size() / (double) Config.PING_COUNT_PER_MEASUREMENT);  //deleted by Clarence
+      if (packetLoss == Double.MIN_VALUE) {
+          packetLoss = 1 - 
+              ((double) rrts.size() / (double) Config.PING_COUNT_PER_MEASUREMENT);
+        }
       
       dataConsumed += pingTask.packetSizeByte * Config.PING_COUNT_PER_MEASUREMENT * 2;
       
@@ -505,6 +574,10 @@ public class PingTask extends MeasurementTask{
     PingDesc pingTask = (PingDesc) this.measurementDesc;
     String errorMsg = "";
     MeasurementResult result = null;
+    double packetLoss = Double.MIN_VALUE;           //added by Clarence
+    MeasurementResult IM_measurementResult = null;  //added by Clarence
+    MeasurementResult[] IM_result = null;
+    IM_result = new MeasurementResult[1];
 
     try {
       long totalPingDelay = 0;
@@ -525,12 +598,27 @@ public class PingTask extends MeasurementTask{
         pingEndTime = System.currentTimeMillis();
         httpClient.disconnect();
         rrts.add((double) (pingEndTime - pingStartTime));
+        packetLoss = 1 -
+                ((double) rrts.size() / (i+1));
+        dataConsumed += pingTask.packetSizeByte * (i+1) * 2;
+        this.scheduler = this.getScheduler();
+        if ( this.scheduler != null){
+        	  IM_measurementResult = constructResult(rrts,packetLoss,
+            			(i+1),PING_METHOD_HTTP);
+              IM_result[0] = IM_measurementResult;
+              broadcastIntermediateMeasurement(IM_result,this.scheduler);
+        	  
+         }
 
       }
       Logger.i("HTTP get ping succeeds");
       Logger.i("RTT is " + rrts.toString());
-      double packetLoss = 1
-          - ((double) rrts.size() / (double) Config.PING_COUNT_PER_MEASUREMENT);
+//      double packetLoss = 1
+//          - ((double) rrts.size() / (double) Config.PING_COUNT_PER_MEASUREMENT);
+      if (packetLoss == Double.MIN_VALUE) {
+          packetLoss = 1 - 
+              ((double) rrts.size() / (double) Config.PING_COUNT_PER_MEASUREMENT);
+        }
       
       dataConsumed += pingTask.packetSizeByte * Config.PING_COUNT_PER_MEASUREMENT * 2;
       
