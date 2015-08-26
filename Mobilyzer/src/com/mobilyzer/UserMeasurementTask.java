@@ -34,7 +34,7 @@ public class UserMeasurementTask implements Callable<MeasurementResult[]> {
   public UserMeasurementTask(MeasurementTask task,
                              MeasurementScheduler scheduler) {
     realTask = task;
-    realTask.setScheduler(scheduler);  //added by Clarence
+    realTask.setContext(scheduler.getApplicationContext());  //added by Clarence
     this.scheduler = scheduler;  
     this.contextCollector= new ContextCollector();
   }

@@ -14,11 +14,6 @@
 
 package com.mobilyzer.measurements;
 
-import android.content.Intent;
-import android.os.Parcel;
-import android.os.Parcelable;
-
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,19 +36,25 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import android.content.Context;
+import android.content.Intent;
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import com.mobilyzer.Config;
 import com.mobilyzer.MeasurementDesc;
 import com.mobilyzer.MeasurementResult;
+import com.mobilyzer.MeasurementResult.TaskProgress;
 import com.mobilyzer.MeasurementScheduler;
 import com.mobilyzer.MeasurementTask;
 import com.mobilyzer.PreemptibleMeasurementTask;
 import com.mobilyzer.UpdateIntent;
-import com.mobilyzer.MeasurementResult.TaskProgress;
 import com.mobilyzer.exceptions.MeasurementError;
 import com.mobilyzer.util.Logger;
 import com.mobilyzer.util.MeasurementJsonConvertor;
 import com.mobilyzer.util.PhoneUtils;
 import com.mobilyzer.util.Util;
+
 
 
 /**
@@ -91,13 +92,13 @@ public class TracerouteTask extends MeasurementTask implements PreemptibleMeasur
 
   // Track data consumption for this task to avoid exceeding user's limit
   private long dataConsumed;
-  private MeasurementScheduler scheduler = null;  // added by Clarence
+  private Context context = null;  // added by Clarence
   private TaskProgress Intermediate_TaskProgress = TaskProgress.COMPLETED;  //added by Clarence
   
   //added by Clarence, add broadcast to send the intermediate results
   
-  private void broadcastIntermediateMeasurement(MeasurementResult[] results, MeasurementScheduler scheduler) {
-	  this.scheduler = scheduler;
+  private void broadcastIntermediateMeasurement(MeasurementResult[] results, Context context) {
+	  this.context = context;
       Intent intent = new Intent();
       intent.setAction(UpdateIntent.MEASUREMENT_INTERMEDIATE_PROGRESS_UPDATE_ACTION);
       //TODO fixed one value priority for all users task?
@@ -111,7 +112,7 @@ public class TracerouteTask extends MeasurementTask implements PreemptibleMeasur
         //intent.putExtra(UpdateIntent.TASK_STATUS_PAYLOAD, Config.TASK_FINISHED);
         intent.putExtra(UpdateIntent.INTERMEDIATE_RESULT_PAYLOAD, results);
       
-      this.scheduler.sendBroadcast(intent);
+      this.context.sendBroadcast(intent);
       }else{
     	 intent.putExtra(UpdateIntent.INTERMEDIATE_RESULT_PAYLOAD, "No intermediate results are broadcasted");
     	  
@@ -438,8 +439,8 @@ public class TracerouteTask extends MeasurementTask implements PreemptibleMeasur
           }
         }
       //added by Clarence
-        this.scheduler = this.getScheduler();
-        if (this.scheduler != null){
+        this.context = this.getContext();
+        if (this.context != null){
         
       	  PhoneUtils Intermediate_phoneUtils = PhoneUtils.getPhoneUtils();
       	  IntermediateResult = new MeasurementResult(Intermediate_phoneUtils.getDeviceInfo().deviceId,
@@ -465,7 +466,7 @@ public class TracerouteTask extends MeasurementTask implements PreemptibleMeasur
       
       	  MeasurementResult[] IM_mrArray = new MeasurementResult[1];
       	  IM_mrArray[0] = IntermediateResult;
-      	  broadcastIntermediateMeasurement(IM_mrArray,this.scheduler);  
+      	  broadcastIntermediateMeasurement(IM_mrArray,this.context);  
         }
       			
       	  

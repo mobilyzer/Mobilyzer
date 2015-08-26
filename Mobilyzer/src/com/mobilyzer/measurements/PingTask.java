@@ -15,6 +15,7 @@
 
 package com.mobilyzer.measurements;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -75,10 +76,10 @@ public class PingTask extends MeasurementTask{
   private long dataConsumed;
   
   
-  private MeasurementScheduler scheduler = null;  // added by Clarence
+  private Context context = null;  // added by Clarence
   
-  private void broadcastIntermediateMeasurement(MeasurementResult[] results, MeasurementScheduler scheduler) {
-	  this.scheduler = scheduler;
+  private void broadcastIntermediateMeasurement(MeasurementResult[] results, Context context) {
+	  this.context = context;
       Intent intent = new Intent();
       intent.setAction(UpdateIntent.MEASUREMENT_INTERMEDIATE_PROGRESS_UPDATE_ACTION);
       //TODO fixed one value priority for all users task?
@@ -92,7 +93,7 @@ public class PingTask extends MeasurementTask{
         //intent.putExtra(UpdateIntent.TASK_STATUS_PAYLOAD, Config.TASK_FINISHED);
         intent.putExtra(UpdateIntent.INTERMEDIATE_RESULT_PAYLOAD, results);
       
-      this.scheduler.sendBroadcast(intent);
+      this.context.sendBroadcast(intent);
       }else{
     	 intent.putExtra(UpdateIntent.INTERMEDIATE_RESULT_PAYLOAD, "No intermediate results are broadcasted");
     	  
@@ -445,13 +446,13 @@ public class PingTask extends MeasurementTask{
           int packetsReceived = packetLossInfo[1];
           packetLoss = 1 - ((double) packetsReceived / (double) packetsSent);
         }
-        this.scheduler = this.getScheduler();
-        if ( this.scheduler != null ){
+        this.context = this.getContext();
+        if ( this.context != null ){
         	if (rrts.size() >= 2  && (rrts.size() < Config.PING_COUNT_PER_MEASUREMENT) && (extractedValues != null) ){
         		IM_measurementResult = constructResult(rrts,packetLoss,
             			rrts.size(),PING_METHOD_CMD);
         		IM_result[0] = IM_measurementResult;
-        		broadcastIntermediateMeasurement(IM_result,this.scheduler);
+        		broadcastIntermediateMeasurement(IM_result,this.context);
         		
         		
         	}
@@ -521,12 +522,12 @@ public class PingTask extends MeasurementTask{
           packetLoss = 1 -
                 ((double) rrts.size() / (i+1));
           dataConsumed += pingTask.packetSizeByte * (i+1) * 2;
-          this.scheduler = this.getScheduler();
-          if ( this.scheduler != null){
+          this.context = this.getContext();
+          if ( this.context != null){
         	  IM_measurementResult = constructResult(rrts,packetLoss,
             			(i+1),PING_METHOD_JAVA);
               IM_result[0] = IM_measurementResult;
-              broadcastIntermediateMeasurement(IM_result,this.scheduler);
+              broadcastIntermediateMeasurement(IM_result,this.context);
         	  
           }
           
@@ -601,12 +602,12 @@ public class PingTask extends MeasurementTask{
         packetLoss = 1 -
                 ((double) rrts.size() / (i+1));
         dataConsumed += pingTask.packetSizeByte * (i+1) * 2;
-        this.scheduler = this.getScheduler();
-        if ( this.scheduler != null){
+        this.context = this.getContext();
+        if ( this.context != null){
         	  IM_measurementResult = constructResult(rrts,packetLoss,
             			(i+1),PING_METHOD_HTTP);
               IM_result[0] = IM_measurementResult;
-              broadcastIntermediateMeasurement(IM_result,this.scheduler);
+              broadcastIntermediateMeasurement(IM_result,this.context);
         	  
          }
 

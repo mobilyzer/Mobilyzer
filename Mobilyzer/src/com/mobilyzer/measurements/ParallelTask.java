@@ -166,7 +166,7 @@ public class ParallelTask extends MeasurementTask{
   @Override
   public MeasurementResult[] call() throws MeasurementError {
 	 for (MeasurementTask task: this.tasks){
-		 task.setScheduler(this.getScheduler());
+		 task.setContext(this.getContext());
 	 }           //added by Clarence
     long timeout=duration;
     executor=Executors.newFixedThreadPool(this.tasks.size());
