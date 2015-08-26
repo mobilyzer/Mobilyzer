@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="scheduler_version_name">1.0</string>
+    <string name="scheduler_priority">2</string>
+    
+</resources>
