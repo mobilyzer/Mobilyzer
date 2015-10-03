@@ -76,9 +76,9 @@ public class PingTask extends MeasurementTask{
   private long dataConsumed;
   
   
-  private Context context = null;  // added by Clarence
+  private Context context = null;  
   
-  private void broadcastIntermediateMeasurement(MeasurementResult[] results, Context context) {
+  private void broadcastIntermediateResults(MeasurementResult[] results, Context context) {
 	  this.context = context;
       Intent intent = new Intent();
       intent.setAction(UpdateIntent.MEASUREMENT_INTERMEDIATE_PROGRESS_UPDATE_ACTION);
@@ -387,9 +387,9 @@ public class PingTask extends MeasurementTask{
     String errorMsg = "";
     MeasurementResult measurementResult = null;
     
-    MeasurementResult IM_measurementResult = null;  //added by Clarence
-    MeasurementResult[] IM_result = null;
-    IM_result = new MeasurementResult[1];
+    MeasurementResult intermediateMeasurementResults = null;  
+    MeasurementResult[] intermediateResult = null;
+    intermediateResult = new MeasurementResult[1];
     
     // TODO(Wenjie): Add a exhaustive list of ping locations for different
     //               Android phones
@@ -449,15 +449,15 @@ public class PingTask extends MeasurementTask{
         this.context = this.getContext();
         if ( this.context != null ){
         	if (rrts.size() >= 2  && (rrts.size() < Config.PING_COUNT_PER_MEASUREMENT) && (extractedValues != null) ){
-        		IM_measurementResult = constructResult(rrts,packetLoss,
+        		intermediateMeasurementResults = constructResult(rrts,packetLoss,
             			rrts.size(),PING_METHOD_CMD);
-        		IM_result[0] = IM_measurementResult;
-        		broadcastIntermediateMeasurement(IM_result,this.context);
+        		intermediateResult[0] = intermediateMeasurementResults;
+        		broadcastIntermediateResults(intermediateResult,this.context);
         		
         		
         	}
         }
-        //IM_packetsSent++;
+      
 
         Logger.i(line);
       }
@@ -501,10 +501,10 @@ public class PingTask extends MeasurementTask{
     ArrayList<Double> rrts = new ArrayList<Double>();
     String errorMsg = "";
     MeasurementResult result = null;
-    double packetLoss = Double.MIN_VALUE;           //added by Clarence
-    MeasurementResult IM_measurementResult = null;  //added by Clarence
-    MeasurementResult[] IM_result = null;
-    IM_result = new MeasurementResult[1];
+    double packetLoss = Double.MIN_VALUE;           
+    MeasurementResult intermediateMeasurementResults = null;  
+    MeasurementResult[] intermediateResult = null;
+    intermediateResult = new MeasurementResult[1];
 
     try {       
       int timeOut = (int) (3000 * (double) pingTask.pingTimeoutSec /
@@ -524,10 +524,10 @@ public class PingTask extends MeasurementTask{
           dataConsumed += pingTask.packetSizeByte * (i+1) * 2;
           this.context = this.getContext();
           if ( this.context != null){
-        	  IM_measurementResult = constructResult(rrts,packetLoss,
+        	  intermediateMeasurementResults = constructResult(rrts,packetLoss,
             			(i+1),PING_METHOD_JAVA);
-              IM_result[0] = IM_measurementResult;
-              broadcastIntermediateMeasurement(IM_result,this.context);
+              intermediateResult[0] = intermediateMeasurementResults;
+              broadcastIntermediateResults(intermediateResult,this.context);
         	  
           }
           
@@ -536,7 +536,7 @@ public class PingTask extends MeasurementTask{
       }
       Logger.i("java ping succeeds");
 //      double packetLoss = 1 -
-//          ((double) rrts.size() / (double) Config.PING_COUNT_PER_MEASUREMENT);  //deleted by Clarence
+//          ((double) rrts.size() / (double) Config.PING_COUNT_PER_MEASUREMENT);  
       if (packetLoss == Double.MIN_VALUE) {
           packetLoss = 1 - 
               ((double) rrts.size() / (double) Config.PING_COUNT_PER_MEASUREMENT);
@@ -575,10 +575,10 @@ public class PingTask extends MeasurementTask{
     PingDesc pingTask = (PingDesc) this.measurementDesc;
     String errorMsg = "";
     MeasurementResult result = null;
-    double packetLoss = Double.MIN_VALUE;           //added by Clarence
-    MeasurementResult IM_measurementResult = null;  //added by Clarence
-    MeasurementResult[] IM_result = null;
-    IM_result = new MeasurementResult[1];
+    double packetLoss = Double.MIN_VALUE;           
+    MeasurementResult intermediateMeasurementResults = null;  
+    MeasurementResult[] intermediateResult = null;
+    intermediateResult = new MeasurementResult[1];
 
     try {
       long totalPingDelay = 0;
@@ -604,10 +604,10 @@ public class PingTask extends MeasurementTask{
         dataConsumed += pingTask.packetSizeByte * (i+1) * 2;
         this.context = this.getContext();
         if ( this.context != null){
-        	  IM_measurementResult = constructResult(rrts,packetLoss,
+        	  intermediateMeasurementResults = constructResult(rrts,packetLoss,
             			(i+1),PING_METHOD_HTTP);
-              IM_result[0] = IM_measurementResult;
-              broadcastIntermediateMeasurement(IM_result,this.context);
+              intermediateResult[0] = intermediateMeasurementResults;
+              broadcastIntermediateResults(intermediateResult,this.context);
         	  
          }
 

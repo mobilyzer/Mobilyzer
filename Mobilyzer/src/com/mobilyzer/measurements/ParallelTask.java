@@ -167,7 +167,7 @@ public class ParallelTask extends MeasurementTask{
   public MeasurementResult[] call() throws MeasurementError {
 	 for (MeasurementTask task: this.tasks){
 		 task.setContext(this.getContext());
-	 }           //added by Clarence
+	 }          
     long timeout=duration;
     executor=Executors.newFixedThreadPool(this.tasks.size());
 

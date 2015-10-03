@@ -34,7 +34,7 @@ public class UserMeasurementTask implements Callable<MeasurementResult[]> {
   public UserMeasurementTask(MeasurementTask task,
                              MeasurementScheduler scheduler) {
     realTask = task;
-    realTask.setContext(scheduler.getApplicationContext());  //added by Clarence
+    realTask.setContext(scheduler.getApplicationContext());  
     this.scheduler = scheduler;  
     this.contextCollector= new ContextCollector();
   }
@@ -101,11 +101,11 @@ public class UserMeasurementTask implements Callable<MeasurementResult[]> {
       ArrayList<HashMap<String, String>> contextResults =
           contextCollector.stopCollector();
       for (MeasurementResult r: results){
-    	String testIntermediate1 = r.toString();
+    	String testIntermediateFirst = r.toString();
         r.addContextResults(contextResults);
         r.getDeviceProperty().dnResolvability=contextCollector.dnsConnectivity;
         r.getDeviceProperty().ipConnectivity=contextCollector.ipConnectivity;
-        String testIntermediate2 = r.toString();
+        String testIntermediateSecond = r.toString();
         
       } 
     } catch (MeasurementError e) {

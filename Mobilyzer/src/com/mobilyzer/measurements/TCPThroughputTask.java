@@ -93,16 +93,16 @@ public class TCPThroughputTask extends MeasurementTask {
   private TaskProgress taskProgress;
   private volatile boolean stopFlag;
   
-  private Context IM_context = null;  // added by Clarence
-  private TaskProgress Intermediate_TaskProgress = TaskProgress.COMPLETED;  //added by Clarence
+  private Context IM_context = null;  
+  private TaskProgress Intermediate_TaskProgress = TaskProgress.COMPLETED;  
   
-  //added by Clarence, add broadcast to send the intermediate results
+  // add broadcast to send the intermediate results
   
   private void broadcastIntermediateMeasurement(MeasurementResult[] results, Context context) {
 	  this.IM_context = context;
       Intent intent = new Intent();
       intent.setAction(UpdateIntent.MEASUREMENT_INTERMEDIATE_PROGRESS_UPDATE_ACTION);
-      //TODO fixed one value priority for all users task?
+      
       intent.putExtra(UpdateIntent.TASK_PRIORITY_PAYLOAD,
         MeasurementTask.USER_PRIORITY);
       intent.putExtra(UpdateIntent.TASKID_PAYLOAD, this.getTaskId());
@@ -617,7 +617,7 @@ public class TCPThroughputTask extends MeasurementTask {
       int resultMsgLen = iStream.read(resultMsg, 0, resultMsg.length);
       if (resultMsgLen > 0) {
     	  
-    	MeasurementResult IntermediateResult = null;      //added by Clarence
+    	MeasurementResult IntermediateResult = null;      
     	
         String resultMsgStr = new String(resultMsg).substring(0, resultMsgLen);
         // Sample result string is "1111.11#2222.22#3333.33";
@@ -628,8 +628,7 @@ public class TCPThroughputTask extends MeasurementTask {
           sampleResult = Double.valueOf(tps_result_str[i]);
           this.samplingResults = this.insertWithOrder(this.samplingResults,
             sampleResult);
-          
-        //added by Clarence
+  
           this.IM_context = this.getContext();  
           if (this.IM_context != null){
         	  PhoneUtils Intermediate_phoneUtils = PhoneUtils.getPhoneUtils();
@@ -740,7 +739,7 @@ public class TCPThroughputTask extends MeasurementTask {
    */
   private void updateSize(int delta) {
 	  
-	MeasurementResult IntermediateResult = null;      //added by Clarence
+	MeasurementResult IntermediateResult = null;      
 	
     double gtime = System.currentTimeMillis() - this.taskStartTime;
     //ignore slow start
@@ -760,7 +759,7 @@ public class TCPThroughputTask extends MeasurementTask {
       this.accumulativeSize = 0;
       this.startSampleTime = System.currentTimeMillis();
       
-      //added by Clarence
+     
       this.IM_context = this.getContext();  
       if (this.IM_context != null){
     	  PhoneUtils Intermediate_phoneUtils = PhoneUtils.getPhoneUtils();

@@ -185,7 +185,7 @@ public class MeasurementScheduler extends Service {
     filter.addAction(UpdateIntent.MEASUREMENT_PROGRESS_UPDATE_ACTION);
     filter.addAction(UpdateIntent.GCM_MEASUREMENT_ACTION);
     filter.addAction(UpdateIntent.PLT_MEASUREMENT_ACTION);
-    //added by Clarence
+   
     filter.addAction(UpdateIntent.MEASUREMENT_INTERMEDIATE_PROGRESS_UPDATE_ACTION);
     
 
@@ -326,7 +326,7 @@ public class MeasurementScheduler extends Service {
           } else if (intent.getStringExtra(UpdateIntent.TASK_STATUS_PAYLOAD).equals(
               Config.TASK_RESUMED)) {
             tasksStatus.put(taskid, TaskStatus.RUNNING);
-          }  //added by Clarence
+          }  
         } else if (intent.getAction().equals(UpdateIntent.MEASUREMENT_INTERMEDIATE_PROGRESS_UPDATE_ACTION)){
         	String IM_taskKey = intent.getStringExtra(UpdateIntent.CLIENTKEY_PAYLOAD);
             String IM_taskid = intent.getStringExtra(UpdateIntent.TASKID_PAYLOAD);

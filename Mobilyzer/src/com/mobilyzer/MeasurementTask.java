@@ -33,8 +33,8 @@ public abstract class MeasurementTask
   protected MeasurementDesc measurementDesc;
   protected String taskId;
   
-  //private MeasurementScheduler scheduler; // added by Clarence 
-  private Context context = null;           //added by Clarence
+  //private MeasurementScheduler scheduler; 
+  private Context context = null;          
 
 
   public static final int USER_PRIORITY = Integer.MIN_VALUE;
@@ -121,7 +121,7 @@ public abstract class MeasurementTask
     this.measurementDesc.key = key;
   }
   
-  // added by Clarence, pass scheduler to every specific task
+  //  pass scheduler to every specific task
   public void setContext(Context context) {
 	    this.context = context;
   }

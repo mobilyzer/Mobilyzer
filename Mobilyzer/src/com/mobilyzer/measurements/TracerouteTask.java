@@ -92,10 +92,10 @@ public class TracerouteTask extends MeasurementTask implements PreemptibleMeasur
 
   // Track data consumption for this task to avoid exceeding user's limit
   private long dataConsumed;
-  private Context context = null;  // added by Clarence
-  private TaskProgress Intermediate_TaskProgress = TaskProgress.COMPLETED;  //added by Clarence
+  private Context context = null;  
+  private TaskProgress Intermediate_TaskProgress = TaskProgress.COMPLETED;  
   
-  //added by Clarence, add broadcast to send the intermediate results
+  // add broadcast to send the intermediate results
   
   private void broadcastIntermediateMeasurement(MeasurementResult[] results, Context context) {
 	  this.context = context;
@@ -358,7 +358,7 @@ public class TracerouteTask extends MeasurementTask implements PreemptibleMeasur
       throw new MeasurementError("target " + target + " cannot be resolved");
     }
     MeasurementResult result = null;
-    MeasurementResult IntermediateResult = null;      //added by Clarence
+    MeasurementResult intermediateResult = null;      
    
     
 
@@ -438,35 +438,31 @@ public class TracerouteTask extends MeasurementTask implements PreemptibleMeasur
 
           }
         }
-      //added by Clarence
+  
         this.context = this.getContext();
         if (this.context != null){
         
       	  PhoneUtils Intermediate_phoneUtils = PhoneUtils.getPhoneUtils();
-      	  IntermediateResult = new MeasurementResult(Intermediate_phoneUtils.getDeviceInfo().deviceId,
+      	  intermediateResult = new MeasurementResult(Intermediate_phoneUtils.getDeviceInfo().deviceId,
       			  Intermediate_phoneUtils.getDeviceProperty(this.getKey()),TracerouteTask.TYPE,
       			  System.currentTimeMillis()*1000,Intermediate_TaskProgress,this.measurementDesc);
       	  
-      	  IntermediateResult.addResult("num_hops", hop.ttl);
+      	  intermediateResult.addResult("num_hops", hop.ttl);
       	  
       	  for (int i = 0; i < hopHosts.size(); i++) {
-            HopInfo IM_hopInfo = hopHosts.get(i);
-            int IM_hostIdx = 1;   //added by Clarence
-            for (String IM_host : IM_hopInfo.hosts) {
-              IntermediateResult.addResult("hop_" + IM_hopInfo.ttl + "_addr_" + IM_hostIdx++, IM_host);
+            HopInfo intermediateHopInfo = hopHosts.get(i);
+            int intermediateHostIdx = 1;   
+            for (String intermediateHost : intermediateHopInfo.hosts) {
+              intermediateResult.addResult("hop_" + intermediateHopInfo.ttl + "_addr_" + intermediateHostIdx++, intermediateHost);
             }
-            IntermediateResult.addResult("hop_" + IM_hopInfo.ttl + "_rtt_ms", String.format("%.3f", IM_hopInfo.rtt));
+            intermediateResult.addResult("hop_" + intermediateHopInfo.ttl + "_rtt_ms", String.format("%.3f", intermediateHopInfo.rtt));
             
           }
       	  
-//      	  for (String IM_host :hop.hosts){
-//      		  IntermediateResult.addResult("hop_" + hop.ttl + "_addr_" + IM_hostIdx++, IM_host);
-//      	  }
-//      	  IntermediateResult.addResult("hop_" + hop.ttl + "_rtt_ms", String.format("%.3f", hop.rtt));
-      
-      	  MeasurementResult[] IM_mrArray = new MeasurementResult[1];
-      	  IM_mrArray[0] = IntermediateResult;
-      	  broadcastIntermediateMeasurement(IM_mrArray,this.context);  
+
+      	  MeasurementResult[] intermediateMrArray = new MeasurementResult[1];
+      	  intermediateMrArray[0] = intermediateResult;
+      	  broadcastIntermediateMeasurement(intermediateMrArray,this.context);  
         }
       			
       	  
