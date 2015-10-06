@@ -617,7 +617,7 @@ public class TCPThroughputTask extends MeasurementTask {
       int resultMsgLen = iStream.read(resultMsg, 0, resultMsg.length);
       if (resultMsgLen > 0) {
     	  
-    	MeasurementResult IntermediateResult = null;      
+//    	MeasurementResult IntermediateResult = null;      
     	
         String resultMsgStr = new String(resultMsg).substring(0, resultMsgLen);
         // Sample result string is "1111.11#2222.22#3333.33";
@@ -629,21 +629,21 @@ public class TCPThroughputTask extends MeasurementTask {
           this.samplingResults = this.insertWithOrder(this.samplingResults,
             sampleResult);
   
-          this.IM_context = this.getContext();  
-          if (this.IM_context != null){
-        	  PhoneUtils Intermediate_phoneUtils = PhoneUtils.getPhoneUtils();
-        	  IntermediateResult = new MeasurementResult(Intermediate_phoneUtils.getDeviceInfo().deviceId,
-        			  Intermediate_phoneUtils.getDeviceProperty(this.getKey()),TCPThroughputTask.TYPE,
-        			  System.currentTimeMillis()*1000,Intermediate_TaskProgress,this.measurementDesc);
-        	  IntermediateResult.addResult("tcp_speed_results", this.samplingResults);
-        	  IntermediateResult.addResult("data_limit_exceeded", this.DATA_LIMIT_EXCEEDED);
-        	  IntermediateResult.addResult("duration", this.taskDuration);
-        	  IntermediateResult.addResult("server_version", this.serverVersion);
-        	  MeasurementResult[] IM_mrArray = new MeasurementResult[1];
-          	  IM_mrArray[0] = IntermediateResult;
-          	  broadcastIntermediateMeasurement(IM_mrArray,this.IM_context); 
-        	  
-          }
+//          this.IM_context = this.getContext();  
+//          if (this.IM_context != null){
+//        	  PhoneUtils Intermediate_phoneUtils = PhoneUtils.getPhoneUtils();
+//        	  IntermediateResult = new MeasurementResult(Intermediate_phoneUtils.getDeviceInfo().deviceId,
+//        			  Intermediate_phoneUtils.getDeviceProperty(this.getKey()),TCPThroughputTask.TYPE,
+//        			  System.currentTimeMillis()*1000,Intermediate_TaskProgress,this.measurementDesc);
+//        	  IntermediateResult.addResult("tcp_speed_results", this.samplingResults);
+//        	  IntermediateResult.addResult("data_limit_exceeded", this.DATA_LIMIT_EXCEEDED);
+//        	  IntermediateResult.addResult("duration", this.taskDuration);
+//        	  IntermediateResult.addResult("server_version", this.serverVersion);
+//        	  MeasurementResult[] IM_mrArray = new MeasurementResult[1];
+//          	  IM_mrArray[0] = IntermediateResult;
+//          	  broadcastIntermediateMeasurement(IM_mrArray,this.IM_context); 
+//        	  
+//          }
         }
       }
       Logger.i("Total number of sampling result is " + this.samplingResults.size());
