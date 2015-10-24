@@ -49,7 +49,7 @@ import java.util.Map;
 /** 
  * A Callable task that issues HTTP gets for a list of URLs
  */
-public class HttpCensorshipTask extends MeasurementTask {
+public class HttpTask extends MeasurementTask {
 
     // Type name for internal use
     public static final String TYPE = "http";
@@ -77,7 +77,7 @@ public class HttpCensorshipTask extends MeasurementTask {
     private HttpURLConnection httpClient = null;
 
     /** 
-     * Create a new HttpCensorship task from a measurement description 
+     * Create a new Http task from a measurement description 
      */
     public HttpTask(MeasurementDesc desc) {
 	super(new HttpDesc(desc.key, desc.startTime, desc.endTime, desc.intervalSec,
@@ -100,7 +100,7 @@ public class HttpCensorshipTask extends MeasurementTask {
      */
     public static final Parcelable.Creator<HttpTask> CREATOR =
 	new Parcelable.Creator<HttpTask>() {
-	public HttpCenshorshipTask createFromParcel(Parcel in) {
+	public HttpTask createFromParcel(Parcel in) {
 	    return new HttpTask(in);
       }
 	
@@ -120,7 +120,7 @@ public class HttpCensorshipTask extends MeasurementTask {
     }
     
     /**
-     * Class defining the description of a Http censorship measurement
+     * Class defining the description of a Http  measurement
      *   Note that the class is static - it behaves like a top-level class
      *   but is put here for packaging convienience. No extra .java files..Woo! 
      */
@@ -137,7 +137,7 @@ public class HttpCensorshipTask extends MeasurementTask {
 		  priority,contextIntervalSec, params);
 	    initializeParams(params);
 	    if (url == null || url.length() == 0) {
-		throw new InvalidParameterException("Url for http censorship task is null");
+		throw new InvalidParameterException("Url for http task is null");
 	    }
 	}
 	
