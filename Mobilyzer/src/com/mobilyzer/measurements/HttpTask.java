@@ -1,5 +1,5 @@
 /* Copyright 2012 Google Inc.
- *
+ * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,22 +15,17 @@
 
 package com.mobilyzer.measurements;
 
+// Java Http Connection imports
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.MalformedURLException;
 
-import android.net.http.AndroidHttpClient;
+// Parceling and Base64 imports
 import android.os.Parcel;
-import android.os.Parcelable;
+import android.os.Parceable;
 import android.util.Base64;
 
-import org.apache.http.Header;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.StatusLine;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpHead;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.entity.StringEntity;
-
+// Mobilyzer-specific imports
 import com.mobilyzer.Config;
 import com.mobilyzer.MeasurementDesc;
 import com.mobilyzer.MeasurementResult;
@@ -42,377 +37,371 @@ import com.mobilyzer.util.MeasurementJsonConvertor;
 import com.mobilyzer.util.PhoneUtils;
 import com.mobilyzer.util.Util;
 
+// other java imports 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InvalidClassException;
-import java.net.MalformedURLException;
 import java.nio.ByteBuffer;
 import java.security.InvalidParameterException;
 import java.util.Date;
 import java.util.Map;
 
-/**
- * A Callable class that performs download throughput test using HTTP get
+/** 
+ * A Callable task that issues HTTP gets for a list of URLs
  */
-public class HttpTask extends MeasurementTask {
+public class HttpCensorshipTask extends MeasurementTask {
 
-  // Type name for internal use
-  public static final String TYPE = "http";
-  // Human readable name for the task
-  public static final String DESCRIPTOR = "HTTP";
-  /* TODO(Wenjie): Depending on state machine configuration of cell tower's radio,
-   * the size to find the 'real' bandwidth of the phone may be network dependent.  
-   */
-  // The maximum number of bytes we will read from requested URL. Set to 1Mb.
-  public static final long MAX_HTTP_RESPONSE_SIZE = 1024 * 1024;
-  // The size of the response body we will report to the service.
-  // If the response is larger than MAX_BODY_SIZE_TO_UPLOAD bytes, we will 
-  // only report the first MAX_BODY_SIZE_TO_UPLOAD bytes of the body.
-  public static final int MAX_BODY_SIZE_TO_UPLOAD = 1024;
-  // The buffer size we use to read from the HTTP response stream
-  public static final int READ_BUFFER_SIZE = 1024;
-  // Not used by the HTTP protocol. Just in case we do not receive a status line
-  // from the response
-  public static final int DEFAULT_STATUS_CODE = 0;
+    // Type name for internal use
+    public static final String TYPE = "http";
+
+    // Human readable name for the task
+    public static final String DESCRIPTOR = "HTTP";
+
+    // The maximum number of bytes we will read from any requested URL. Set to 1Mb.
+    public static final long MAX_HTTP_RESPONSE_SIZE = 1024 * 1024;
+
+    // The buffer size we use to read from the HTTP response stream
+    public static final int READ_BUFFER_SIZE = 1024;
+
+    // Not used by the HTTP protocol. Just in case we do not receive a status line
+    // from the response
+    public static final int DEFAULT_STATUS_CODE = 0;
+
+    // Track data consumption for this task to avoid exceeding user's limit  
+    private long dataConsumed;
+
+    // length of time the task has run
+    private long duration;
+   
+    // Actual Http Client 
+    private HttpURLConnection httpClient = null;
+
+    /** 
+     * Create a new HttpCensorship task from a measurement description 
+     */
+    public HttpTask(MeasurementDesc desc) {
+	super(new HttpDesc(desc.key, desc.startTime, desc.endTime, desc.intervalSec,
+				     desc.count, desc.priority, desc.contextIntervalSec, desc.parameters));
+	this.duration=Config.DEFAULT_HTTP_TASK_DURATION;
+	this.dataConsumed = 0;
+    }
   
-  //Track data consumption for this task to avoid exceeding user's limit  
-  private long dataConsumed;
-
-  private AndroidHttpClient httpClient = null;
-
-  private long duration;
-
-  public HttpTask(MeasurementDesc desc) {
-    super(new HttpDesc(desc.key, desc.startTime, desc.endTime, desc.intervalSec,
-      desc.count, desc.priority, desc.contextIntervalSec, desc.parameters));
-    this.duration=Config.DEFAULT_HTTP_TASK_DURATION;
-    this.dataConsumed = 0;
-  }
-  
-  protected HttpTask(Parcel in) {
-    super(in);
-    duration = in.readLong();
-    dataConsumed = in.readLong();
-  }
-
-  public static final Parcelable.Creator<HttpTask> CREATOR =
-      new Parcelable.Creator<HttpTask>() {
-    public HttpTask createFromParcel(Parcel in) {
-      return new HttpTask(in);
+    /** 
+     * Create a new HttpTask from a Parcel 
+     */
+    protected HttpTask(Parcel in) {
+	super(in);
+	duration = in.readLong();
+	dataConsumed = in.readLong();
     }
-
-    public HttpTask[] newArray(int size) {
-      return new HttpTask[size];
-    }
-  };
-
-  @Override
-  public void writeToParcel(Parcel dest, int flags) {
-    super.writeToParcel(dest, flags);
-    dest.writeLong(duration);
-    dest.writeLong(dataConsumed);
-  }
-  /**
-   * The description of a HTTP measurement 
-   */
-  public static class HttpDesc extends MeasurementDesc {
-    public String url;
-    private String method;
-    private String headers;
-    private String body;
-
-    public HttpDesc(String key, Date startTime, Date endTime,
-        double intervalSec, long count, long priority, int contextIntervalSec,
-        Map<String, String> params) throws InvalidParameterException {
-      super(HttpTask.TYPE, key, startTime, endTime, intervalSec, count,
-        priority,contextIntervalSec, params);
-      initializeParams(params);
-      if (this.url == null || this.url.length() == 0) {
-        throw new InvalidParameterException("URL for http task is null");
+    
+    /**
+     * A creator that generates instances of HttpTasks from a Parcel
+     */
+    public static final Parcelable.Creator<HttpTask> CREATOR =
+	new Parcelable.Creator<HttpTask>() {
+	public HttpCenshorshipTask createFromParcel(Parcel in) {
+	    return new HttpTask(in);
       }
-    }
-
-    @Override
-    protected void initializeParams(Map<String, String> params) {
-
-      if (params == null) {
-        return;
-      }
-
-      this.url = params.get("url");
-      if (!this.url.startsWith("http://") && !this.url.startsWith("https://")) {
-        this.url = "http://" + this.url;
-      }
-
-      this.method = params.get("method");
-      if (this.method == null || this.method.isEmpty()) {
-        this.method = "get";
-      }
-      this.headers = params.get("headers");      
-      this.body = params.get("body");
-    }
-
-    @Override
-    public String getType() {
-      return HttpTask.TYPE;
-    }
-
-
-    protected HttpDesc(Parcel in) {
-      super(in);
-      url = in.readString();
-      method = in.readString();
-      headers = in.readString();
-      body = in.readString();
-    }
-
-    public static final Parcelable.Creator<HttpDesc> CREATOR =
-        new Parcelable.Creator<HttpDesc>() {
-      public HttpDesc createFromParcel(Parcel in) {
-        return new HttpDesc(in);
-      }
-
-      public HttpDesc[] newArray(int size) {
-        return new HttpDesc[size];
+	
+      public HttpTask[] newArray(int size) {
+	  return new HttpTask[size];
       }
     };
 
+    /** 
+     * Output a HttpTask to a Parcel 
+     */
     @Override
     public void writeToParcel(Parcel dest, int flags) {
-      super.writeToParcel(dest, flags);
-      dest.writeString(url);
-      dest.writeString(method);
-      dest.writeString(headers);
-      dest.writeString(body);
+	super.writeToParcel(dest, flags);
+	dest.writeLong(duration);
+	dest.writeLong(dataConsumed);
     }
-  }
-
-  /**
-   * Returns a copy of the HttpTask
-   */
-  @Override
-  public MeasurementTask clone() {
-    MeasurementDesc desc = this.measurementDesc;
-    HttpDesc newDesc = new HttpDesc(desc.key, desc.startTime, desc.endTime, 
-      desc.intervalSec, desc.count, desc.priority, desc.contextIntervalSec,
-      desc.parameters);
-    return new HttpTask(newDesc);
-  }
-
-  /** Runs the HTTP measurement task. Will acquire power lock to ensure wifi
-   *  is not turned off */
-  @Override
-  public MeasurementResult[] call() throws MeasurementError {
-
-    int statusCode = HttpTask.DEFAULT_STATUS_CODE;
-    long duration = 0;
-    long originalHeadersLen = 0;
-    long originalBodyLen;
-    String headers = null;
-    ByteBuffer body = ByteBuffer.allocate(HttpTask.MAX_BODY_SIZE_TO_UPLOAD);
-    //    boolean success = false;
-    TaskProgress taskProgress=TaskProgress.FAILED;
-    String errorMsg = "";
-    InputStream inputStream = null;
     
-    long currentRxTx=Util.getCurrentRxTxBytes();
+    /**
+     * Class defining the description of a Http censorship measurement
+     *   Note that the class is static - it behaves like a top-level class
+     *   but is put here for packaging convienience. No extra .java files..Woo! 
+     */
+    public static class HttpDesc extends MeasurementDesc {
+	public String url;
+	public String method;
+	public String headers;
+	// TODO more fields may be needed
+	
+	public HttpDesc(String key, Date startTime, Date endTime,
+				  double intervalSec, long count, long priority, int contextIntervalSec,
+				  Map<String, String> params) throws InvalidParameterException {
+	    super(HttpTask.TYPE, key, startTime, endTime, intervalSec, count,
+		  priority,contextIntervalSec, params);
+	    initializeParams(params);
+	    if (url == null || url.length() == 0) {
+		throw new InvalidParameterException("Url for http censorship task is null");
+	    }
+	}
+	
+	@Override
+	protected void initializeParams(Map<String, String> params) {    
+	    if (params == null) {
+		return;
+	    }
+	    
+	    this.url = params.get("url");
+	    if (!this.url.startsWith("http://") && !this.url.startsWith("https://")) {
+		this.url = "http://" + this.url;
+	    }
+	   
+	    this.method = params.get("method");
+	    if (this.method == null || this.method.isEmpty()) {
+		this.method = "get";
+     	    }
+	    
+	    this.headers = params.get("headers");
+	}
+	
+	@Override
+	public String getType() {
+	    return HttpTask.TYPE;
+	}
+	
+	protected HttpDesc(Parcel in) {
+	    super(in);
+	    url = in.readString();
+	    method = in.readString();
+	    headers = in.readString();
+	}
+	
+	public static final Parcelable.Creator<HttpDesc> CREATOR =
+	    new Parcelable.Creator<HttpDesc>() {
+	    public HttpDesc createFromParcel(Parcel in) {
+		return new HttpDesc(in);
+	    }
+	    
+	    public HttpDesc[] newArray(int size) {
+		return new HttpDesc[size];
+	    }
+	};
 
-    try {
-      // set the download URL, a URL that points to a file on the Internet
-      // this is the file to be downloaded
-      HttpDesc task = (HttpDesc) this.measurementDesc;
-      String urlStr = task.url;
-
-      // TODO(Wenjie): Need to set timeout for the HTTP methods
-      httpClient = AndroidHttpClient.newInstance(Util.prepareUserAgent());
-      HttpRequestBase request = null;
-      if (task.method.compareToIgnoreCase("head") == 0) {
-        request = new HttpHead(urlStr);
-      } else if (task.method.compareToIgnoreCase("get") == 0) {
-        request = new HttpGet(urlStr);
-      } else if (task.method.compareToIgnoreCase("post") == 0) {
-        request = new HttpPost(urlStr);
-        HttpPost postRequest = (HttpPost) request;
-        postRequest.setEntity(new StringEntity(task.body));
-      } else {
-        // Use GET by default
-        request = new HttpGet(urlStr);
-      }
-
-      if (task.headers != null && task.headers.trim().length() > 0) {
-        for (String headerLine : task.headers.split("\r\n")) {
-          String tokens[] = headerLine.split(":");
-          if (tokens.length == 2) {
-            request.addHeader(tokens[0], tokens[1]);
-          } else {
-            throw new MeasurementError("Incorrect header line: " + headerLine);
-          }
-        }
-      }
-
-
-      byte[] readBuffer = new byte[HttpTask.READ_BUFFER_SIZE];
-      int readLen;      
-      int totalBodyLen = 0;
-
-      long startTime = System.currentTimeMillis();
-      HttpResponse response = httpClient.execute(request);
-
-      /* TODO(Wenjie): HttpClient does not automatically handle the following codes
-       * 301 Moved Permanently. HttpStatus.SC_MOVED_PERMANENTLY
-       * 302 Moved Temporarily. HttpStatus.SC_MOVED_TEMPORARILY
-       * 303 See Other. HttpStatus.SC_SEE_OTHER
-       * 307 Temporary Redirect. HttpStatus.SC_TEMPORARY_REDIRECT
-       * 
-       * We may want to fetch instead from the redirected page. 
-       */
-      StatusLine statusLine = response.getStatusLine();
-      if (statusLine != null) {
-        statusCode = statusLine.getStatusCode();
-        if(statusCode == 200){
-          taskProgress=TaskProgress.COMPLETED;
-        }
-        else{
-          taskProgress=TaskProgress.FAILED;
-        }
-      }
-
-      /* For HttpClient to work properly, we still want to consume the entire
-       * response even if the status code is not 200 
-       */
-      HttpEntity responseEntity = response.getEntity();      
-      originalBodyLen = responseEntity.getContentLength();
-      long expectedResponseLen = HttpTask.MAX_HTTP_RESPONSE_SIZE;
-      // getContentLength() returns negative number if body length is unknown
-      if (originalBodyLen > 0) {
-        expectedResponseLen = originalBodyLen;
-      }
-
-      if (responseEntity != null) {
-        inputStream = responseEntity.getContent();
-        while ((readLen = inputStream.read(readBuffer)) > 0 
-            && totalBodyLen <= HttpTask.MAX_HTTP_RESPONSE_SIZE) {
-          totalBodyLen += readLen;
-          // Fill in the body to report up to MAX_BODY_SIZE
-          if (body.remaining() > 0) {
-            int putLen = body.remaining() < readLen ? body.remaining() : readLen; 
-            body.put(readBuffer, 0, putLen);
-          }
-        }
-        duration = System.currentTimeMillis() - startTime;//TODO check this
-      }
-
-      Header[] responseHeaders = response.getAllHeaders();
-      if (responseHeaders != null) {
-        headers = "";
-        for (Header hdr : responseHeaders) {
-          /*
-           * TODO(Wenjie): There can be preceding and trailing white spaces in
-           * each header field. I cannot find internal methods that return the
-           * number of bytes in a header. The solution here assumes the encoding
-           * is one byte per character.
-           */
-          originalHeadersLen += hdr.toString().length();
-          headers += hdr.toString() + "\r\n";
-        }
-      }
-
-      PhoneUtils phoneUtils = PhoneUtils.getPhoneUtils();
-
-      MeasurementResult result = new MeasurementResult(
-        phoneUtils.getDeviceInfo().deviceId,
-        phoneUtils.getDeviceProperty(this.getKey()),
-        HttpTask.TYPE, System.currentTimeMillis() * 1000,
-        taskProgress, this.measurementDesc);
-
-      result.addResult("code", statusCode);
-      
-      dataConsumed+=(Util.getCurrentRxTxBytes()-currentRxTx);
-
-      if (taskProgress==TaskProgress.COMPLETED) {
-        result.addResult("time_ms", duration);
-        result.addResult("headers_len", originalHeadersLen);
-        result.addResult("body_len", totalBodyLen);
-        result.addResult("headers", headers);
-        result.addResult("body", Base64.encodeToString(body.array(),
-          Base64.DEFAULT));
-      }
-
-      Logger.i(MeasurementJsonConvertor.toJsonString(result));
-      MeasurementResult[] mrArray= new MeasurementResult[1];
-      mrArray[0]=result;
-      return mrArray;    
-    } catch (MalformedURLException e) {
-      errorMsg += e.getMessage() + "\n";
-      Logger.e(e.getMessage());
-    } catch (IOException e) {
-      errorMsg += e.getMessage() + "\n";
-      Logger.e(e.getMessage());
-    } finally {
-      if (inputStream != null) {
-        try {
-          inputStream.close();
-        } catch (IOException e) {
-          Logger.e("Fails to close the input stream from the HTTP response");
-        }
-      }
-      if (httpClient != null) {
-        httpClient.close();
-      }
-
+	@Override
+	public void writeToParcel(Parcel dest, int flags) {
+	    super.writeToParcel(dest, flags);
+	    dest.writeString(url);
+	    dest.writeString(method);
+	    dest.writeString(headers);
+	}
     }
-    throw new MeasurementError("Cannot get result from HTTP measurement because "
-        + errorMsg);
-  }  
-
-  @SuppressWarnings("rawtypes")
-  public static Class getDescClass() throws InvalidClassException {
-    return HttpDesc.class;
-  }
-
-  @Override
-  public String getType() {
-    return HttpTask.TYPE;
-  }
-
-  @Override
-  public String getDescriptor() {
-    return DESCRIPTOR;
-  }
-
-  @Override
-  public String toString() {
-    HttpDesc desc = (HttpDesc) measurementDesc;
-    return "[HTTP " + desc.method + "]\n  Target: " + desc.url +
-        "\n  Interval (sec): " + desc.intervalSec + "\n  Next run: " +
-        desc.startTime;
-  }
-
-  @Override
-  public boolean stop() {
-    return false;
-  }
-
-  @Override
-  public long getDuration() {
-    return this.duration;
-  }
-
-
-  @Override
-  public void setDuration(long newDuration) {
-    if(newDuration<0){
-      this.duration=0;
-    }else{
-      this.duration=newDuration;
+    
+    /**
+     * Returns a copy of the HttpTask
+     */
+    @Override
+    public MeasurementTask clone() {
+	MeasurementDesc desc = this.measurementDesc;
+	HttpDesc newDesc = new HttpDesc(desc.key, desc.startTime, desc.endTime, 
+							    desc.intervalSec, desc.count, 
+							    desc.priority, desc.contextIntervalSec,
+							    desc.parameters);
+	return new HttpTask(newDesc);
     }
-  }
-  
-  /**
-   * Data used so far by the task.
-   */
-  @Override
-  public long getDataConsumed() {
-    return dataConsumed;
-  }
+
+    /** 
+     * gets the class description from an instance of the measurement task
+     */
+    @SuppressWarnings("rawtypes")
+    public static Class getDescClass() throws InvalidClassException {
+	return HttpDesc.class;
+    }
+
+    /** 
+     * gets the type string of the class
+     */
+    @Override
+    public String getType() {
+	return HttpTask.TYPE;
+    }
+
+    /** 
+     * Gets human-readable string descriptor of the task
+     */
+    @Override
+    public String getDescriptor() {
+	return DESCRIPTOR;
+    }
+
+    /**
+     * Returns a string representation of the task
+     */
+    @Override
+    public String toString() {
+	// get measurementDesc from superclass
+	HttpDesc desc = (HttpDesc) measurementDesc; 
+	return "Http Task [HTTP " + desc.method + "]\n  Target: " + desc.url + 
+	    "\n  Headers: " + desc.headers +
+	    "\n  Interval (sec): " + desc.intervalSec + "\n  Next run: " +
+	    desc.startTime;
+    }	
+
+    /** 
+     * TODO Unsure why this exists...
+     */
+    @Override
+    public boolean stop() {
+	return false;
+    }
+
+    /**
+     * gets the duration of the task
+     */
+    @Override
+    public long getDuration() {
+	return this.duration;
+    }
+
+    /** 
+     * sets the duration of the task
+     */
+    @Override
+    public void setDuration(long newDuration) {
+	if(newDuration<0){
+	    this.duration=0;
+	}else{
+	    this.duration=newDuration;
+	}
+    }
+    
+    /**
+     * Data used so far by the task.
+     */
+    @Override
+    public long getDataConsumed() {
+	return dataConsumed;
+    }
+    
+    /** 
+     * Runs the task. This is where all the magic happens.
+     */
+    @Override
+    public MeasurementResult[] call() throws MeasurementError {
+	
+	int statusCode = HttpTask.DEFAULT_STATUS_CODE;
+	String errorMsg = "";
+	long duration = 0;
+	long preTaskRxTx = Util.getCurrentRxTxBytes();
+	InputStream in;
+	String header = "";
+	ByteBuffer body;
+	
+	try {
+	    // get the task description from the superclass field
+	    HttpDesc desc = (HttpDesc) this.measurementDesc;
+	    
+	    // get the URL
+	    URL url = new URL(desc.url);
+
+	    // instantiate the HttpURLConnection
+	    httpClient = (HttpURLConnection) url.openConnection();
+	    httpClient.setRequestMethod(dest.method);
+	    httpClient.setUseCaches(false);
+	    if (desc.headers != null && desc.headers.trim().length() > 0) {
+		for (String headerLine : task.headers.replaceAll("\\r", "").split("\\n")) {
+		    String tokens[] = headerLine.trim().split(":");
+		    if (tokens.length == 2) {
+			httpClient.setRequestProperty(tokens[0], tokens[1]);
+		    }
+		    else {
+			throw new MeasurementError("Invalid header line: " + headerLine);
+		    }
+		}
+	    }
+
+	    // track time elapsed
+	    long startTime = System.currentTimeMillis();
+	   
+	    // get headers
+	    statusCode = httpClient.getResponseCode();
+	    int contentLength = httpClient.getContentLength();
+	    Map<String, List<String>> headers = httpClient.getHeaderFields();
+	    if (headers != null) {
+		StringBuilder h = new StringBuilder();
+		for (Map.Entry<String, List<String>> entry : map.entrySet()) {
+		    h.append(entry.getKey().trim() + ":" + entry.getValue().toString().trim() + "\n");
+		}
+	    }
+	    header = h.toString();
+	    
+	    // get body
+	    in = httpClient.getInputStream();
+	    int totalBodyLen = 0;
+	    if (in != null) {
+		byte[] readBuffer = new byte[READ_BUFFER_SIZE];
+		body = ByteBuffer.allocate(MAX_HTTP_RESPONSE_SIZE);
+		
+		while((readLen = in.read(readbuffer)) > 0 && 
+		      totalBodyLen < MAX_HTTP_RESPONSE_SIZE) {
+		    totalBodyLen += readLen;
+		    if (body.remaining() > 0) { 
+			int putLen = body.remaining() < readlen ? body.remaining() : readLen;
+			body.put(readBuffer, 0, putLen);
+		    }
+		}
+	    }
+	    
+	    // finish elapsed time
+	    duration = System.currentTimeMillis() - startTime;
+
+	    // generate the measurement result
+	    // set task progress to completed always beacuse we are interested in
+	    // all results even if status code isn't 200. 
+	    PhoneUtils phoneUtils = PhoneUtils.getPhoneUtils();
+	    MeasurementResult result = new MeasurementResult(
+		  phoneUtils.getDeviceInfo().deviceId,
+		  phoneUtils.getDeviceProperty(this.getKey()),
+		  HttpTask.TYPE, System.currentTimeMillis() * 1000,
+		  TaskProgress.COMPLETED, this.measurementDesc);
+	    
+	    result.addResult("status_code", statusCode);
+	    result.addResult("content_length", content_length);
+	    dataConsumed += (Util.getCurrentRxTxBytes() - preTaskRxTx);
+	    result.addResult("time_ms", duration);
+	    result.addResult("headers_len", header.length());
+	    result.addResult("body_len", totalBodyLen);
+	    result.addResult("headers", header); // will be empty string if no headers
+	    if(totalBodyLength > 0) {
+		result.addResult("body", Base64.encodeToString(body.array(),
+							       Base64.DEFAULT));
+	    }
+	    
+	    // return result!
+	    Logger.i(MeasurementJsonConvertor.toJsonString(result));
+	    MeasurementResult[] mrArray= new MeasurementResult[1];
+	    mrArray[0]=result;
+	    return mrArray;
+	    
+	} catch (MalformedURLException e) {
+	    errorMsg += e.getMessage() + "\n";
+	    Logger.e(e.getMessage());
+	} catch (IOException e) {
+	    errorMsg += e.getMessage() + "\n";
+	    Logger.e(e.getMessage());
+	} finally {
+	    if (inputStream != null) {
+		try {
+		    inputStream.close();
+		} catch (IOException e) {
+		    Logger.e("Fails to close the input stream from the HTTP response");
+		}
+	    }
+	    if (httpClient != null) {
+		httpClient.disconnect();
+	    }   
+	}
+	//this throw is only triggered if the return wasn't hit in the try block
+	throw new MeasurementError("Cannot get result from HTTP measurement because "
+				   + errorMsg);
+    }
 }
+
+
+    
+    
