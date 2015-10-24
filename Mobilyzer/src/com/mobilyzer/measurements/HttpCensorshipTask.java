@@ -45,11 +45,6 @@ public class HttpCensorshipTask extends MeasurementTask {
     // The maximum number of bytes we will read from any requested URL. Set to 1Mb.
     public static final long MAX_HTTP_RESPONSE_SIZE = 1024 * 1024;
 
-    // The size of the response body we will report to the service.
-    // If the response is larger than MAX_BODY_SIZE_TO_UPLOAD bytes, we will 
-    // only report the first MAX_BODY_SIZE_TO_UPLOAD bytes of the body.
-    public static final int MAX_BODY_SIZE_TO_UPLOAD = 1024;
-
     // The buffer size we use to read from the HTTP response stream
     public static final int READ_BUFFER_SIZE = 1024;
 
@@ -60,9 +55,12 @@ public class HttpCensorshipTask extends MeasurementTask {
     // Track data consumption for this task to avoid exceeding user's limit  
     private long dataConsumed;
 
-    // what is this for???
+    // length of time the task has run
     private long duration;
    
+    // Actual Http Client 
+    private HttpURLConnection httpClient = null;
+
     /** 
      * Create a new HttpCensorship task from a measurement description 
      */
@@ -114,6 +112,7 @@ public class HttpCensorshipTask extends MeasurementTask {
     public static class HttpCensorshipDesc extends MeasurementDesc {
 	public String url;
 	public String method;
+	public String headers;
 	// TODO more fields may be needed
 	
 	public HttpCensorshipDesc(String key, Date startTime, Date endTime,
@@ -141,7 +140,9 @@ public class HttpCensorshipTask extends MeasurementTask {
 	    this.method = params.get("method");
 	    if (this.method == null || this.method.isEmpty()) {
 		this.method = "get";
-	    }
+     	    }
+	    
+	    this.headers = params.get("headers");
 	}
 	
 	@Override
@@ -153,6 +154,7 @@ public class HttpCensorshipTask extends MeasurementTask {
 	    super(in);
 	    url = in.readString();
 	    method = in.readString();
+	    headers = in.readString();
 	}
 	
 	public static final Parcelable.Creator<HttpDesc> CREATOR =
@@ -171,6 +173,7 @@ public class HttpCensorshipTask extends MeasurementTask {
 	    super.writeToParcel(dest, flags);
 	    dest.writeString(url);
 	    dest.writeString(method);
+	    dest.writeString(headers);
 	}
     }
     
@@ -181,8 +184,9 @@ public class HttpCensorshipTask extends MeasurementTask {
     public MeasurementTask clone() {
 	MeasurementDesc desc = this.measurementDesc;
 	HttpCensorshipDesc newDesc = new HttpCensorshipDesc(desc.key, desc.startTime, desc.endTime, 
-							    desc.intervalSec, desc.count, desc.priority, 
-							    desc.contextIntervalSec, desc.parameters);
+							    desc.intervalSec, desc.count, 
+							    desc.priority, desc.contextIntervalSec,
+							    desc.parameters);
 	return new HttpTask(newDesc);
     }
 
@@ -217,16 +221,17 @@ public class HttpCensorshipTask extends MeasurementTask {
     public String toString() {
 	// get measurementDesc from superclass
 	HttpCensorshipDesc desc = (HttpCensorshipDesc) measurementDesc; 
-	return "Censorship Task [HTTP " + desc.method + "]\n  Target: " + desc.url +
+	return "Censorship Task [HTTP " + desc.method + "]\n  Target: " + desc.url + 
+	    "\n  Headers: " + desc.headers +
 	    "\n  Interval (sec): " + desc.intervalSec + "\n  Next run: " +
 	    desc.startTime;
     }	
 
     /** 
-     * TODO Unsure why this exists...doesn't look too important though
+     * TODO Unsure why this exists...doesn't look too important though....
      */
     @Override
-	public boolean stop() {
+    public boolean stop() {
 	return false;
     }
 
@@ -264,6 +269,121 @@ public class HttpCensorshipTask extends MeasurementTask {
     @Override
     public MeasurementResult[] call() throws MeasurementError {
 	
+	int statusCode = HttpCensorshipTask.DEFAULT_STATUS_CODE;
+	String errorMsg = "";
+	long duration = 0;
+	long preTaskRxTx = Util.getCurrentRxTxBytes();
+	InputStream in;
+	String header = "";
+	ByteBuffer body;
+	
+	try {
+	    // get the task description from the superclass field
+	    HttpCensorshipDesc desc = (HttpCensorshipDesc) this.measurementDesc;
+	    
+	    // get the URL
+	    URL url = new URL(desc.url);
+
+	    // instantiate the HttpURLConnection
+	    httpClient = (HttpURLConnection) url.openConnection();
+	    httpClient.setRequestMethod(dest.method);
+	    httpClient.setUseCaches(false);
+	    if (desc.headers != null && desc.headers.trim().length() > 0) {
+		for (String headerLine : task.headers.replaceAll("\\r", "").split("\\n")) {
+		    String tokens[] = headerLine.trim().split(":");
+		    if (tokens.length == 2) {
+			httpClient.setRequestProperty(tokens[0], tokens[1]);
+		    }
+		    else {
+			throw new MeasurementError("Invalid header line: " + headerLine);
+		    }
+		}
+	    }
+
+	    // track time elapsed
+	    long startTime = System.currentTimeMillis();
+	   
+	    // get headers
+	    statusCode = httpClient.getResponseCode();
+	    int contentLength = httpClient.getContentLength();
+	    Map<String, List<String>> headers = httpClient.getHeaderFields();
+	    if (headers != null) {
+		StringBuilder h = new StringBuilder();
+		for (Map.Entry<String, List<String>> entry : map.entrySet()) {
+		    h.append(entry.getKey().trim() + ":" + entry.getValue().toString().trim() + "\n");
+		}
+	    }
+	    header = h.toString();
+	    
+	    // get body
+	    in = httpClient.getInputStream();
+	    int totalBodyLen = 0;
+	    if (in != null) {
+		byte[] readBuffer = new byte[READ_BUFFER_SIZE];
+		body = ByteBuffer.allocate(MAX_HTTP_RESPONSE_SIZE);
+		
+		while((readLen = in.read(readbuffer)) > 0 && 
+		      totalBodyLen < MAX_HTTP_RESPONSE_SIZE) {
+		    totalBodyLen += readLen;
+		    if (body.remaining() > 0) { 
+			int putLen = body.remaining() < readlen ? body.remaining() : readLen;
+			body.put(readBuffer, 0, putLen);
+		    }
+		}
+	    }
+	    
+	    // finish elapsed time
+	    duration = System.currentTimeMillis() - startTime;
+
+	    // generate the measurement result
+	    // set task progress to completed always beacuse we are interested in
+	    // all results even if status code isn't 200. 
+	    PhoneUtils phoneUtils = PhoneUtils.getPhoneUtils();
+	    MeasurementResult result = new MeasurementResult(
+		  phoneUtils.getDeviceInfo().deviceId,
+		  phoneUtils.getDeviceProperty(this.getKey()),
+		  HttpCensorshipTask.TYPE, System.currentTimeMillis() * 1000,
+		  TaskProgress.COMPLETED, this.measurementDesc);
+	    
+	    result.addResult("status_code", statusCode);
+	    result.addResult("content_length", content_length);
+	    dataConsumed += (Util.getCurrentRxTxBytes() - preTaskRxTx);
+	    result.addResult("time_ms", duration);
+	    result.addResult("headers_len", header.length());
+	    result.addResult("body_len", totalBodyLen);
+	    result.addResult("headers", header); // will be empty string if no headers
+	    if(totalBodyLength > 0) {
+		result.addResult("body", Base64.encodeToString(body.array(),
+							       Base64.DEFAULT));
+	    }
+	    
+	    // return result!
+	    Logger.i(MeasurementJsonConvertor.toJsonString(result));
+	    MeasurementResult[] mrArray= new MeasurementResult[1];
+	    mrArray[0]=result;
+	    return mrArray;
+	    
+	} catch (MalformedURLException e) {
+	    errorMsg += e.getMessage() + "\n";
+	    Logger.e(e.getMessage());
+	} catch (IOException e) {
+	    errorMsg += e.getMessage() + "\n";
+	    Logger.e(e.getMessage());
+	} finally {
+	    if (inputStream != null) {
+		try {
+		    inputStream.close();
+		} catch (IOException e) {
+		    Logger.e("Fails to close the input stream from the HTTP response");
+		}
+	    }
+	    if (httpClient != null) {
+		httpClient.disconnect();
+	    }   
+	}
+	//this throw is only triggered if the return wasn't hit in the try block
+	throw new MeasurementError("Cannot get result from HTTP measurement because "
+				   + errorMsg);
     }
 }
 
