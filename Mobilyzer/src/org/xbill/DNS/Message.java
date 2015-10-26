@@ -21,7 +21,7 @@ public class Message implements Cloneable {
 /** The maximum length of a message in wire format. */
 public static final int MAXLENGTH = 65535;
 
-private Header header;
+public Header header;
 private List [] sections;
 private int size;
 private TSIG tsigkey;

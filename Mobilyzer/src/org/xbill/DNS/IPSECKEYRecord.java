@@ -147,8 +147,7 @@ rdataFromString(Tokenizer st, Name origin) throws IOException {
 	key = st.getBase64(false);
 }
 
-String
-rrToString() {
+public String rrToString() {
 	StringBuffer sb = new StringBuffer();
 	sb.append(precedence);
 	sb.append(" ");

@@ -73,8 +73,7 @@ rdataFromString(Tokenizer st, Name origin) throws IOException {
 }
 
 /** Convert to a String */
-String
-rrToString() {
+public String rrToString() {
 	StringBuffer sb = new StringBuffer();
 	sb.append(host);
 	sb.append(" ");

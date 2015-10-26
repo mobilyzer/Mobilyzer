@@ -18,9 +18,9 @@ public abstract class Record implements Cloneable, Comparable, Serializable {
 
 private static final long serialVersionUID = 2694906050116005466L;
 
-protected Name name;
-protected int type, dclass;
-protected long ttl;
+public Name name;
+public int type, dclass;
+public long ttl;
 
 private static final DecimalFormat byteFormat = new DecimalFormat();
 
@@ -285,7 +285,7 @@ rdataToWireCanonical() {
 /**
  * Converts the type-specific RR to text format - must be overriden
  */
-abstract String rrToString();
+public abstract String rrToString();
 
 /**
  * Converts the rdata portion of a Record into a String representation

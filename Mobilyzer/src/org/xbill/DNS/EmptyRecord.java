@@ -30,8 +30,7 @@ void
 rdataFromString(Tokenizer st, Name origin) throws IOException {
 }
 
-String
-rrToString() {
+public String rrToString() {
 	return "";
 }
 

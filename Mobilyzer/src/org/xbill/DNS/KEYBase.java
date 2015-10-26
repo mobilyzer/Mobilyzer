@@ -46,8 +46,7 @@ rrFromWire(DNSInput in) throws IOException {
 }
 
 /** Converts the DNSKEY/KEY Record to a String */
-String
-rrToString() {
+public String rrToString() {
 	StringBuffer sb = new StringBuffer();
 	sb.append(flags);
 	sb.append(" ");

@@ -49,8 +49,7 @@ rrToWire(DNSOutput out, Compression c, boolean canonical) {
 	out.writeByteArray(data);
 }
 
-String
-rrToString() {
+public String rrToString() {
 	return base64.toString(data);
 }
 

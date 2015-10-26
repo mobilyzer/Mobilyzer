@@ -230,8 +230,7 @@ rdataFromString(Tokenizer st, Name origin) throws IOException {
 	st.unget();
 }
 
-String
-rrToString() {
+public String rrToString() {
 	StringBuffer sb = new StringBuffer();
 	for (Iterator it = elements.iterator(); it.hasNext(); ) {
 		Element element = (Element) it.next();

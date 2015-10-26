@@ -48,8 +48,7 @@ rdataFromString(Tokenizer st, Name origin) throws IOException {
 	throw st.exception("no defined text format for NULL records");
 }
 
-String
-rrToString() {
+public String rrToString() {
 	return unknownToString(data);
 }
 

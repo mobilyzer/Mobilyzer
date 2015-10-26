@@ -47,8 +47,7 @@ rdataFromString(Tokenizer st, Name origin) throws IOException {
 	nameField = st.getName(origin);
 }
 
-String
-rrToString() {
+public String rrToString() {
 	StringBuffer sb = new StringBuffer();
 	sb.append(u16Field);
 	sb.append(" ");

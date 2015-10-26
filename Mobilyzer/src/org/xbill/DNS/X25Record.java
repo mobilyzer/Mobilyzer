@@ -78,8 +78,7 @@ rrToWire(DNSOutput out, Compression c, boolean canonical) {
 	out.writeCountedString(address);
 }
 
-String
-rrToString() {
+public String rrToString() {
 	return byteArrayToString(address, true);
 }
 

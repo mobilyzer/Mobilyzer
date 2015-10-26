@@ -54,7 +54,7 @@ import java.util.Map;
 /**
  * A Callable class that performs download throughput test using HTTP get
  */
-public class HttpTask extends MeasurementTask {
+public class HttpTask_original extends MeasurementTask {
 
   // Type name for internal use
   public static final String TYPE = "http";
@@ -82,14 +82,14 @@ public class HttpTask extends MeasurementTask {
 
   private long duration;
 
-  public HttpTask(MeasurementDesc desc) {
+  public HttpTask_original(MeasurementDesc desc) {
     super(new HttpDesc(desc.key, desc.startTime, desc.endTime, desc.intervalSec,
       desc.count, desc.priority, desc.contextIntervalSec, desc.parameters));
     this.duration=Config.DEFAULT_HTTP_TASK_DURATION;
     this.dataConsumed = 0;
   }
   
-  protected HttpTask(Parcel in) {
+  protected HttpTask_original(Parcel in) {
     super(in);
     duration = in.readLong();
     dataConsumed = in.readLong();
@@ -209,7 +209,7 @@ public class HttpTask extends MeasurementTask {
     long originalHeadersLen = 0;
     long originalBodyLen;
     String headers = null;
-    ByteBuffer body = ByteBuffer.allocate(HttpTask.MAX_BODY_SIZE_TO_UPLOAD);
+    ByteBuffer body = ByteBuffer.allocate(HttpTask_original.MAX_BODY_SIZE_TO_UPLOAD);
     //    boolean success = false;
     TaskProgress taskProgress=TaskProgress.FAILED;
     String errorMsg = "";

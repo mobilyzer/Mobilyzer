@@ -98,8 +98,7 @@ rrToWire(DNSOutput out, Compression c, boolean canonical) {
 	out.writeByteArray(address);
 }
 
-String
-rrToString() {
+public String rrToString() {
 	return "0x" + base16.toString(address);
 }
 

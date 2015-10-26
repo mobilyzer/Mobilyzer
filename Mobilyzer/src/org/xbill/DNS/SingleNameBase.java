@@ -43,8 +43,7 @@ rdataFromString(Tokenizer st, Name origin) throws IOException {
 	singleName = st.getName(origin);
 }
 
-String
-rrToString() {
+public String rrToString() {
 	return singleName.toString();
 }
 

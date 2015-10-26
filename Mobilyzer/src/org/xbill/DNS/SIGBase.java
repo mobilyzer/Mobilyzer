@@ -81,8 +81,7 @@ rdataFromString(Tokenizer st, Name origin) throws IOException {
 }
 
 /** Converts the RRSIG/SIG Record to a String */
-String
-rrToString() {
+public String rrToString() {
 	StringBuffer sb = new StringBuffer();
 	sb.append (Type.string(covered));
 	sb.append (" ");

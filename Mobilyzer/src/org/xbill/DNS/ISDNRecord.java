@@ -91,8 +91,7 @@ rrToWire(DNSOutput out, Compression c, boolean canonical) {
 		out.writeCountedString(subAddress);
 }
 
-String
-rrToString() {
+public String rrToString() {
 	StringBuffer sb = new StringBuffer();
 	sb.append(byteArrayToString(address, true));
 	if (subAddress != null) {

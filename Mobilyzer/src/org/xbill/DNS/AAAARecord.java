@@ -47,8 +47,7 @@ rdataFromString(Tokenizer st, Name origin) throws IOException {
 }
 
 /** Converts rdata to a String */
-String
-rrToString() {
+public String rrToString() {
 	InetAddress addr;
 	try {
 		addr = InetAddress.getByAddress(null, address);

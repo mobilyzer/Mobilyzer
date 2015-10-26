@@ -83,8 +83,7 @@ rrToWire(DNSOutput out, Compression c, boolean canonical) {
 /**
  * Converts to a string
  */
-String
-rrToString() {
+public String rrToString() {
 	StringBuffer sb = new StringBuffer();
 	sb.append(byteArrayToString(cpu, true));
 	sb.append(" ");

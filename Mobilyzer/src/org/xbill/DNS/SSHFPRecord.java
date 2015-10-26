@@ -69,8 +69,7 @@ rdataFromString(Tokenizer st, Name origin) throws IOException {
 	fingerprint = st.getHex(true);
 }
 
-String
-rrToString() {
+public String rrToString() {
 	StringBuffer sb = new StringBuffer();
 	sb.append(alg);
 	sb.append(" ");

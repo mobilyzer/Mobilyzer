@@ -114,8 +114,7 @@ modeString() {
 }
 
 /** Converts rdata to a String */
-String
-rrToString() {
+public String rrToString() {
 	StringBuffer sb = new StringBuffer();
 	sb.append(alg);
 	sb.append(" ");

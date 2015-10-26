@@ -35,8 +35,7 @@ rdataFromString(Tokenizer st, Name origin) throws IOException {
 }
 
 /** Converts this Record to the String "unknown format" */
-String
-rrToString() {
+public String rrToString() {
 	return unknownToString(data);
 }
 
