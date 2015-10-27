@@ -327,10 +327,15 @@ public class HttpTask extends MeasurementTask {
             statusCode = httpClient.getResponseCode();
             int contentLength = httpClient.getContentLength();
             Map<String, List<String>> headers = httpClient.getHeaderFields();
-            if (headers != null) {
+            if (headers != null && !headers.isEmpty()) {
                 StringBuilder h = new StringBuilder();
                 for (Map.Entry<String, List<String>> entry : headers.entrySet()) {
-                    h.append(entry.getKey().trim() + ":" + entry.getValue().toString().trim() + "\n");
+		    if (entry.getValue() != null && entry.getKey() != null) {
+			h.append(entry.getKey().trim() + ":" + String.join(", ", entry.getValue()).trim() + "\n");
+		    }
+		    else if (entry.getKey() != null) {
+			h.append(entry.getKey().trim() + ":\n");
+		    }
                 }
                 header = h.toString();
             }
