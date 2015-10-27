@@ -47,6 +47,7 @@ import java.security.InvalidParameterException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Locale;
 
 /**
  * A Callable task that issues HTTP gets for a list of URLs
@@ -156,8 +157,11 @@ public class HttpTask extends MeasurementTask {
 
             this.method = params.get("method");
             if (this.method == null || this.method.isEmpty()) {
-                this.method = "get";
+                this.method = "GET";
             }
+	    else {
+		this.method = this.method.toUpperCase(Locale.ENGLISH);
+	    }
 
             this.headers = params.get("headers");
         }
