@@ -16,6 +16,7 @@ package com.mobilyzer.measurements;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.util.Log;
 
 import java.io.IOException;
 import java.io.InvalidClassException;
@@ -56,6 +57,7 @@ public class DnsLookupTask extends MeasurementTask {
     public static final int AVG_DATA_USAGE_BYTE = 2000;
 
     private long duration;
+    private boolean debug = true;
 
     /**
      * The description of DNS lookup measurement
@@ -216,23 +218,26 @@ public class DnsLookupTask extends MeasurementTask {
                     Type.value(qtype),
                     DClass.value(qclass));
         } catch (TextParseException e) {
-            System.out.println("Error constructing packet");
+            Log.e("testing", "Error constructing packet");
         }
+        if (debug) Log.e("testing", "constructed question");
 
         Message query = Message.newQuery(question);
         // wait for at most 5 seconds for a response
-        long endTime = System.currentTimeMillis() + 5;
-        ArrayList<DNSWrapper> responses = sendMeasurement(query, false, endTime);
+        //long endTime = System.currentTimeMillis() + 5;
+        if (debug) Log.e("testing", "constructed query");
+        ArrayList<DNSWrapper> responses = sendMeasurement(query, false);
         return responses;
     }
 
-    private ArrayList<DNSWrapper> sendMeasurement(Message query, boolean useTCP, long endTime) {
+    private ArrayList<DNSWrapper> sendMeasurement(Message query, boolean useTCP) {
         // now that we have a message, put it on the wire and wait for
         // responses
         int qid = query.getHeader().getID();
         byte[] output = query.toWire();
         int udpSize = SimpleResolver.maxUDPSize(query);
         DnsLookupDesc desc = (DnsLookupDesc) this.measurementDesc;
+        long endTime = System.currentTimeMillis() + 60 * 5 * 1000;
 
         /* the people who wrote the DNS code were not awesome and didn't have abstract methods,
          * so the code doesn't let me use their superclass, client. Therefore, I'm doing the hacky
@@ -247,7 +252,7 @@ public class DnsLookupTask extends MeasurementTask {
                 tclient.connect(addr);
                 useTCP = true;
             } catch (IOException e) {
-                System.out.println("Error creating client");
+                Log.e("testing", "Error creating client");
             }
 
         } else {
@@ -257,17 +262,20 @@ public class DnsLookupTask extends MeasurementTask {
                 SocketAddress addr = new InetSocketAddress(desc.server, 53);
                 uclient.connect(addr);
             } catch (IOException e) {
-                System.out.println("Error creating client");
+                Log.e("testing", "Error creating client");
             }
         }
+        if (debug) Log.e("testing", "initialized client");
 
         boolean shouldSend = true;
         long startTime = 0;
         long respTime;
         ArrayList<DNSWrapper> responses = new ArrayList<DNSWrapper>();
+        if (debug) Log.e("testing", "about to start loop current time " + System.currentTimeMillis() + " end time: " + endTime);
         while (System.currentTimeMillis() < endTime) {
-            byte[] in = null;
+            byte[] in = {};
 
+            if (debug) Log.e("testing", "in send loop");
             if (shouldSend) {
                 try {
                     if (useTCP) tclient.send(output);
@@ -275,8 +283,9 @@ public class DnsLookupTask extends MeasurementTask {
                     startTime = System.currentTimeMillis();
                     shouldSend = false;
                 } catch (IOException e) {
-                    System.out.println("Error sending");
+                    Log.e("testing", "Error sending");
                 }
+                if (debug) Log.e("testing", "sent query");
             }
 
             try {
@@ -286,15 +295,18 @@ public class DnsLookupTask extends MeasurementTask {
                     in = uclient.recv(udpSize);
                 }
             } catch (IOException e) {
-                System.out.println("Problem sending packet");
+                Log.e("testing", "Problem receiving packet due to " + e.getMessage());
             }
+
+            if (debug) Log.e("testing", "received");
 
             respTime = System.currentTimeMillis() - startTime;
 
             // if we didn't get anything back, then continue. this
             // means we will break out if we are over time
             if (in.length == 0) {
-                continue;
+                if (debug) Log.e("testing", "empty response, breaking out");
+                break;
             }
 
             DNSWrapper wrap;
@@ -303,6 +315,7 @@ public class DnsLookupTask extends MeasurementTask {
             if (in.length < Header.LENGTH) {
                 wrap = new DNSWrapper(false, in, null, qid, -1, respTime);
                 responses.add(wrap);
+                if (debug) Log.e("testing", "nothing to parse");
                 continue;
             }
 
@@ -312,8 +325,9 @@ public class DnsLookupTask extends MeasurementTask {
                 response = SimpleResolver.parseMessage(in);
                 wrap = new DNSWrapper(true, in, response, qid, id, respTime);
                 responses.add(wrap);
+                if (debug) Log.e("testing", "successfully parsed response");
             } catch (WireParseException e) {
-                System.out.println("Problem trying to parse dns packet");
+                Log.e("testing", "Problem trying to parse dns packet");
                 wrap = new DNSWrapper(false, in, null, qid, -1, respTime);
                 responses.add(wrap);
                 continue;
@@ -328,12 +342,15 @@ public class DnsLookupTask extends MeasurementTask {
                     tclient.connect(addr);
                     useTCP = true;
                     shouldSend = true;
+                    if (debug) Log.e("testing", "requerying over tcp");
                 } catch (IOException e) {
-                    System.out.println("Problem trying to retry over TCP");
+                    Log.e("testing", "Problem trying to retry over TCP");
                 }
             }
 
         }
+
+        if (debug) Log.e("testing", "outside send loop");
         return responses;
     }
 
@@ -346,44 +363,45 @@ public class DnsLookupTask extends MeasurementTask {
             DnsLookupDesc taskDesc = (DnsLookupDesc) this.measurementDesc;
             Logger.i("Running DNS Lookup for target " + taskDesc.target);
             responses = measureDNS(taskDesc.target, taskDesc.qtype, taskDesc.qclass);
-
-            // t1 = System.currentTimeMillis();
-            // InetAddress inet = InetAddress.getByName(taskDesc.target);
-            // t2 = System.currentTimeMillis();
-            // if (inet != null) {
-            //     totalTime += (t2 - t1);
-            //     resultInet = inet;
-            //     successCnt++;
-            // }
         }
         if ((responses == null) || (responses.size() == 0)) {
             throw new MeasurementError("Problems conducting DNS measurement");
         } else {
             Logger.i("Successfully resolved target address");
             PhoneUtils phoneUtils = PhoneUtils.getPhoneUtils();
-            MeasurementResult result = new MeasurementResult(
-                    phoneUtils.getDeviceInfo().deviceId,
-                    phoneUtils.getDeviceProperty(this.getKey()),
-                    DnsLookupTask.TYPE,
-                    System.currentTimeMillis() * 1000,
-                    TaskProgress.COMPLETED, this.measurementDesc);
+            ArrayList<MeasurementResult> results = new ArrayList<>();
+            MeasurementResult result;
+            for (DNSWrapper wrap : responses) {
+                result = new MeasurementResult(
+                        phoneUtils.getDeviceInfo().deviceId,
+                        phoneUtils.getDeviceProperty(this.getKey()),
+                        DnsLookupTask.TYPE,
+                        System.currentTimeMillis() * 1000,
+                        TaskProgress.COMPLETED, this.measurementDesc);
 
-            // now turn the result into an array of hashmaps with the data we care about
+                // now turn the result into an array of hashmaps with the data we care about
 
-            HashMap<String, Object>[] data = extractResults(responses);
-            result.addResult("results", data);
-            result.addResult("target", desc.target);
-            result.addResult("qtype", desc.qtype);
-            result.addResult("qclass", desc.qclass);
+                List<HashMap<String, Object>> data = extractResults(responses);
+                result.addResult("results", data);
+                result.addResult("target", desc.target);
+                result.addResult("qtype", desc.qtype);
+                result.addResult("qclass", desc.qclass);
 
-            Logger.i(MeasurementJsonConvertor.toJsonString(result));
-            MeasurementResult[] mrArray = new MeasurementResult[1];
-            mrArray[0] = result;
-            return mrArray;
+                Logger.i(MeasurementJsonConvertor.toJsonString(result));
+                results.add(result);
+            }
+
+            // create the result array to return
+            MeasurementResult resultsFinal [] = new MeasurementResult[results.size()];
+            for (int i = 0; i < resultsFinal.length; i++) {
+                resultsFinal[i] = results.get(i);
+            }
+
+            return resultsFinal;
         }
     }
 
-    public HashMap<String, Object>[] extractResults(ArrayList<DNSWrapper> responses) {
+    public List<HashMap<String, Object>> extractResults(ArrayList<DNSWrapper> responses) {
         ArrayList<HashMap<String, Object>> data = new ArrayList<>();
         for (DNSWrapper wrap : responses) {
             Message resp = null;
@@ -425,7 +443,7 @@ public class DnsLookupTask extends MeasurementTask {
             item.put("answers", answers.toArray());
             data.add(item);
         }
-        return (HashMap<String, Object>[]) data.toArray();
+        return data;
     }
 
     @SuppressWarnings("rawtypes")

@@ -24,6 +24,7 @@ import java.net.MalformedURLException;
 // Parceling and Base64 imports
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.text.TextUtils;
 import android.util.Base64;
 
 // Mobilyzer-specific imports
@@ -331,7 +332,7 @@ public class HttpTask extends MeasurementTask {
                 StringBuilder h = new StringBuilder();
                 for (Map.Entry<String, List<String>> entry : headers.entrySet()) {
 		    if (entry.getValue() != null && entry.getKey() != null) {
-			h.append(entry.getKey().trim() + ":" + String.join(", ", entry.getValue()).trim() + "\n");
+			h.append(entry.getKey().trim() + ":" + TextUtils.join(", ", entry.getValue()).trim() + "\n");
 		    }
 		    else if (entry.getKey() != null) {
 			h.append(entry.getKey().trim() + ":\n");
