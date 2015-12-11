@@ -95,14 +95,14 @@ public class HttpTask extends MeasurementTask {
     dataConsumed = in.readLong();
   }
 
-  public static final Parcelable.Creator<NewHttpTask> CREATOR =
-      new Parcelable.Creator<NewHttpTask>() {
-    public NewHttpTask createFromParcel(Parcel in) {
-      return new NewHttpTask(in);
+  public static final Parcelable.Creator<HttpTask> CREATOR =
+      new Parcelable.Creator<HttpTask>() {
+    public HttpTask createFromParcel(Parcel in) {
+      return new HttpTask(in);
     }
 
-    public NewHttpTask[] newArray(int size) {
-      return new NewHttpTask[size];
+    public HttpTask[] newArray(int size) {
+      return new HttpTask[size];
     }
   };
 
@@ -124,7 +124,7 @@ public class HttpTask extends MeasurementTask {
     public HttpDesc(String key, Date startTime, Date endTime,
         double intervalSec, long count, long priority, int contextIntervalSec,
         Map<String, String> params) throws InvalidParameterException {
-      super(NewHttpTask.TYPE, key, startTime, endTime, intervalSec, count,
+      super(HttpTask.TYPE, key, startTime, endTime, intervalSec, count,
         priority,contextIntervalSec, params);
       initializeParams(params);
       if (this.url == null || this.url.length() == 0) {
@@ -154,7 +154,7 @@ public class HttpTask extends MeasurementTask {
 
     @Override
     public String getType() {
-      return NewHttpTask.TYPE;
+      return HttpTask.TYPE;
     }
 
 
@@ -196,7 +196,7 @@ public class HttpTask extends MeasurementTask {
     HttpDesc newDesc = new HttpDesc(desc.key, desc.startTime, desc.endTime, 
       desc.intervalSec, desc.count, desc.priority, desc.contextIntervalSec,
       desc.parameters);
-    return new NewHttpTask(newDesc);
+    return new HttpTask(newDesc);
   }
 
   /** Runs the HTTP measurement task. Will acquire power lock to ensure wifi
@@ -204,7 +204,7 @@ public class HttpTask extends MeasurementTask {
   @Override
   public MeasurementResult[] call() throws MeasurementError {
 
-    int statusCode = NewHttpTask.DEFAULT_STATUS_CODE;
+    int statusCode = HttpTask.DEFAULT_STATUS_CODE;
     long duration = 0;
     long originalHeadersLen = 0;
     long originalBodyLen;
@@ -251,7 +251,7 @@ public class HttpTask extends MeasurementTask {
       }
 
 
-      byte[] readBuffer = new byte[NewHttpTask.READ_BUFFER_SIZE];
+      byte[] readBuffer = new byte[HttpTask.READ_BUFFER_SIZE];
       int readLen;      
       int totalBodyLen = 0;
 
@@ -282,7 +282,7 @@ public class HttpTask extends MeasurementTask {
        */
       HttpEntity responseEntity = response.getEntity();      
       originalBodyLen = responseEntity.getContentLength();
-      long expectedResponseLen = NewHttpTask.MAX_HTTP_RESPONSE_SIZE;
+      long expectedResponseLen = HttpTask.MAX_HTTP_RESPONSE_SIZE;
       // getContentLength() returns negative number if body length is unknown
       if (originalBodyLen > 0) {
         expectedResponseLen = originalBodyLen;
@@ -291,7 +291,7 @@ public class HttpTask extends MeasurementTask {
       if (responseEntity != null) {
         inputStream = responseEntity.getContent();
         while ((readLen = inputStream.read(readBuffer)) > 0 
-            && totalBodyLen <= NewHttpTask.MAX_HTTP_RESPONSE_SIZE) {
+            && totalBodyLen <= HttpTask.MAX_HTTP_RESPONSE_SIZE) {
           totalBodyLen += readLen;
           // Fill in the body to report up to MAX_BODY_SIZE
           if (body.remaining() > 0) {
@@ -322,7 +322,7 @@ public class HttpTask extends MeasurementTask {
       MeasurementResult result = new MeasurementResult(
         phoneUtils.getDeviceInfo().deviceId,
         phoneUtils.getDeviceProperty(this.getKey()),
-        NewHttpTask.TYPE, System.currentTimeMillis() * 1000,
+        HttpTask.TYPE, System.currentTimeMillis() * 1000,
         taskProgress, this.measurementDesc);
 
       result.addResult("code", statusCode);
@@ -372,7 +372,7 @@ public class HttpTask extends MeasurementTask {
 
   @Override
   public String getType() {
-    return NewHttpTask.TYPE;
+    return HttpTask.TYPE;
   }
 
   @Override
