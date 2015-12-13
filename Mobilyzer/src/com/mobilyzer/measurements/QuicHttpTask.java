@@ -36,8 +36,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Author: nzozulya
- * Date: 20.11.2015.
+ * A Callable class that performs download throughput test using QUIC via Google Cronet library
  */
 public class QuicHttpTask extends MeasurementTask {
 
