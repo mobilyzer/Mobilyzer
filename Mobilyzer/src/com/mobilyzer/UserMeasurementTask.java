@@ -22,7 +22,6 @@ import android.content.Intent;
 
 import com.mobilyzer.MeasurementResult.TaskProgress;
 import com.mobilyzer.exceptions.MeasurementError;
-import com.mobilyzer.measurements.QuicHttpTask;
 import com.mobilyzer.util.Logger;
 import com.mobilyzer.util.PhoneUtils;
 
@@ -119,5 +118,6 @@ public class UserMeasurementTask implements Callable<MeasurementResult[]> {
     }
     return results;
   }
+  
   
 }

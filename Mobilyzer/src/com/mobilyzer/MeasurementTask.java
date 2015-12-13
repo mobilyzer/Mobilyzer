@@ -8,12 +8,10 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 
 import com.mobilyzer.exceptions.MeasurementError;
-import com.mobilyzer.measurements.CronetHttpTask;
 import com.mobilyzer.measurements.DnsLookupTask;
 import com.mobilyzer.measurements.HttpTask;
 import com.mobilyzer.measurements.PageLoadTimeTask;
 import com.mobilyzer.measurements.PingTask;
-import com.mobilyzer.measurements.QuicHttpTask;
 import com.mobilyzer.measurements.RRCTask;
 import com.mobilyzer.measurements.SequentialTask;
 import com.mobilyzer.measurements.TCPThroughputTask;
@@ -50,10 +48,6 @@ public abstract class MeasurementTask
     measurementDescToType.put(PingTask.DESCRIPTOR, PingTask.TYPE);
     measurementTypes.put(HttpTask.TYPE, HttpTask.class);
     measurementDescToType.put(HttpTask.DESCRIPTOR, HttpTask.TYPE);
-    measurementTypes.put(CronetHttpTask.TYPE, CronetHttpTask.class);
-    measurementDescToType.put(CronetHttpTask.DESCRIPTOR, CronetHttpTask.TYPE);
-    measurementTypes.put(QuicHttpTask.TYPE, QuicHttpTask.class);
-    measurementDescToType.put(QuicHttpTask.DESCRIPTOR, QuicHttpTask.TYPE);
     measurementTypes.put(TracerouteTask.TYPE, TracerouteTask.class);
     measurementDescToType.put(TracerouteTask.DESCRIPTOR, TracerouteTask.TYPE);
     measurementTypes.put(DnsLookupTask.TYPE, DnsLookupTask.class);
