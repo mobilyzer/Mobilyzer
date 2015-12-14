@@ -11,10 +11,8 @@ public interface Config {
   /**
    * Strings migrated from string.xml
    */
-  //public static final String SERVER_URL = "http://10.0.2.2:8080";
-  //public static final String ANONYMOUS_SERVER_URL = "http://10.0.2.2:8080/anonymous";
-  public static final String SERVER_URL = "http://52.23.241.17:8080";
-  public static final String ANONYMOUS_SERVER_URL = "http://52.23.241.17:8080/anonymous";
+  public static final String SERVER_URL = "https://openmobiledata.appspot.com";
+  public static final String ANONYMOUS_SERVER_URL = "https://openmobiledata.appspot.com/anonymous";
   public static final String TEST_SERVER_URL = "";
   public static final String DEFAULT_USER = "Anonymous";
 

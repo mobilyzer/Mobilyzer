@@ -139,7 +139,7 @@ public class QuicHttpTask extends MeasurementTask {
             if (urlParam == null || urlParam.isEmpty()) {
                 throw new InvalidParameterException("URL for quic http task is null");
             }
-            //TODO: what if http
+
             url = urlParam.startsWith("https://") ? urlParam : "https://" + urlParam;
 
             headers = params.get("headers");
