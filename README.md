@@ -26,7 +26,7 @@ You need Android Studio to integrate Mobilyzer into your Android apps.
 
 1. Create **quiclibs** folder next to **src** folder of your app, copy jars from the **quiclibs** folder in Mobilyzer to it and add the following to the dependencies of your app’s **build.gradle** file  
 
-&nbsp;&nbsp;dependencies {`  
+&nbsp;&nbsp;`dependencies {`  
 &nbsp;&nbsp;&nbsp;&nbsp;`apk files('quiclibs/base_java.jar')`  
 &nbsp;&nbsp;&nbsp;&nbsp;`apk files('quiclibs/jsr_305_javalib.jar')`  
 &nbsp;&nbsp;&nbsp;&nbsp;`apk files('quiclibs/net_java.jar')`  
