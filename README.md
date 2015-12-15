@@ -26,12 +26,13 @@ You need Android Studio to integrate Mobilyzer into your Android apps.
 
 1. Create **quiclibs** folder next to **src** folder of your app, copy jars from the **quiclibs** folder in Mobilyzer to it and add the following to the dependencies of your app’s **build.gradle** file  
 
-&nbsp;&nbsp;`dependencies {`  
+&nbsp;&nbsp;dependencies {`  
 &nbsp;&nbsp;&nbsp;&nbsp;`apk files('quiclibs/base_java.jar')`  
 &nbsp;&nbsp;&nbsp;&nbsp;`apk files('quiclibs/jsr_305_javalib.jar')`  
 &nbsp;&nbsp;&nbsp;&nbsp;`apk files('quiclibs/net_java.jar')`  
 &nbsp;&nbsp;&nbsp;&nbsp;`apk files('quiclibs/url_java.jar')`  
 &nbsp;&nbsp;`}`  
+
 2. Create a **jniLibs** folder under **src/main** of your project and copy the contents of the **jniLibs** folder in Mobilyzer to it, add reference to it to the `android {}` section your app’s **build.gradle** file  
 
 &nbsp;&nbsp;`sourceSets {`  
@@ -39,6 +40,7 @@ You need Android Studio to integrate Mobilyzer into your Android apps.
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`jniLibs.srcDirs = ['src/main/jniLibs'] `  
 &nbsp;&nbsp;&nbsp;&nbsp;`}`  
 &nbsp;&nbsp;`}`  
+
 3. Add Mobilyzer library project as a compile dependency of your app in **build.gradle** file  
 
 &nbsp;&nbsp;`dependencies {`  
@@ -47,6 +49,6 @@ You need Android Studio to integrate Mobilyzer into your Android apps.
 &nbsp;&nbsp;&nbsp;&nbsp;`apk files('quiclibs/base_java.jar')`  
 &nbsp;&nbsp;&nbsp;&nbsp;`apk files('quiclibs/jsr_305_javalib.jar')`  
 &nbsp;&nbsp;&nbsp;&nbsp;`apk files('quiclibs/net_java.jar')`  
-&nbsp;&nbsp;`apk files('quiclibs/url_java.jar')`  
+&nbsp;&nbsp;&nbsp;&nbsp;`apk files('quiclibs/url_java.jar')`  
 &nbsp;&nbsp;`}`
 
