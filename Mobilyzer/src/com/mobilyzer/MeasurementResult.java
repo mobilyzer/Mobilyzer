@@ -25,6 +25,7 @@ import android.os.Parcelable;
 import android.util.StringBuilderPrinter;
 
 import com.mobilyzer.measurements.CronetHttpTask;
+import com.mobilyzer.measurements.CronetHttpTask.CronetHttpDesc;
 import com.mobilyzer.measurements.DnsLookupTask;
 import com.mobilyzer.measurements.HttpTask;
 import com.mobilyzer.measurements.ParallelTask;
@@ -363,7 +364,7 @@ public class MeasurementResult implements Parcelable {
   }
 
   private void getCronetHttpResult(StringBuilderPrinter printer, HashMap<String, String> values) {
-    HttpDesc desc = (HttpDesc) parameters;
+    CronetHttpDesc desc = (CronetHttpDesc) parameters;
     printer.println("[CronetHTTP]");
     printer.println("URL: " + desc.url);
     printer.println("Timestamp: " + Util.getTimeStringFromMicrosecond(properties.timestamp));
