@@ -23,7 +23,7 @@ You need Android Studio to integrate Mobilyzer into your Android apps.
 &nbsp;&nbsp;`include ':mobilibs:ExoPlayer:library'`  
 
 **Configuring app project:**  
-<ul>
+<ol>
 <li>Create **quiclibs** folder next to **src** folder of your app, copy jars from the **quiclibs** folder in Mobilyzer to it and add the following to the dependencies of your app’s **build.gradle** file</li>  
 
 &nbsp;&nbsp;`dependencies {`  
@@ -51,4 +51,5 @@ You need Android Studio to integrate Mobilyzer into your Android apps.
 &nbsp;&nbsp;&nbsp;&nbsp;`apk files('quiclibs/net_java.jar')`  
 &nbsp;&nbsp;&nbsp;&nbsp;`apk files('quiclibs/url_java.jar')`  
 &nbsp;&nbsp;`}`
+</ol>
 
