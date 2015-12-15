@@ -7,8 +7,7 @@ Mobilyzer is a network measurment platform, developed for Android applications. 
 
 ##Important: How to Integrate Mobilyzer for Mobile Apps
 
-**Note**   
-In the provided version of Cronet library certificate verification is disabled for QUIC and is set up to ignore certificate errors HTTPS, thus communication using CronetHttpTask and QuicHttpTask is not secure.  
+**Note** In the provided version of Cronet library certificate verification is disabled for QUIC and is set up to ignore certificate errors HTTPS, thus communication using CronetHttpTask and QuicHttpTask is not secure.  
 
 You need Android Studio to integrate Mobilyzer into your Android apps.  
 
