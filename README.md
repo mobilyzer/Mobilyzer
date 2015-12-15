@@ -23,8 +23,8 @@ You need Android Studio to integrate Mobilyzer into your Android apps.
 &nbsp;&nbsp;`include ':mobilibs:ExoPlayer:library'`  
 
 **Configuring app project:**  
-
-1. Create **quiclibs** folder next to **src** folder of your app, copy jars from the **quiclibs** folder in Mobilyzer to it and add the following to the dependencies of your app’s **build.gradle** file  
+<ul>
+<li>Create **quiclibs** folder next to **src** folder of your app, copy jars from the **quiclibs** folder in Mobilyzer to it and add the following to the dependencies of your app’s **build.gradle** file</li>  
 
 &nbsp;&nbsp;`dependencies {`  
 &nbsp;&nbsp;&nbsp;&nbsp;`apk files('quiclibs/base_java.jar')`  
@@ -33,7 +33,7 @@ You need Android Studio to integrate Mobilyzer into your Android apps.
 &nbsp;&nbsp;&nbsp;&nbsp;`apk files('quiclibs/url_java.jar')`  
 &nbsp;&nbsp;`}`  
 
-2. Create a **jniLibs** folder under **src/main** of your project and copy the contents of the **jniLibs** folder in Mobilyzer to it, add reference to it to the `android {}` section your app’s **build.gradle** file  
+<li>Create a **jniLibs** folder under **src/main** of your project and copy the contents of the **jniLibs** folder in Mobilyzer to it, add reference to it to the `android {}` section your app’s **build.gradle** file</li>  
 
 &nbsp;&nbsp;`sourceSets {`  
 &nbsp;&nbsp;&nbsp;&nbsp;` main {`  
@@ -41,7 +41,7 @@ You need Android Studio to integrate Mobilyzer into your Android apps.
 &nbsp;&nbsp;&nbsp;&nbsp;`}`  
 &nbsp;&nbsp;`}`  
 
-3. Add Mobilyzer library project as a compile dependency of your app in **build.gradle** file  
+<li>Add Mobilyzer library project as a compile dependency in your app's **build.gradle** file</li>  
 
 &nbsp;&nbsp;`dependencies {`  
 &nbsp;&nbsp;&nbsp;&nbsp;`compile project(':mobilibs:Mobilyzer:Mobilyzer')`  
