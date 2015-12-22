@@ -42,7 +42,7 @@ import com.mobilyzer.util.PhoneUtils;
  * 
  * UDPBurstTask provides two types of measurements, Burst Up and Burst Down, described next.
  * 
- * 1. UDPBurst Up: the device sends a burst of UDPBurstCount UDP packets and waits for a
+ * 1. UDPBurst Up: the device sends sends a burst of UDPBurstCount UDP packets and waits for a
  * response from the server that includes the number of packets that the server received
  * 
  * 2. UDPBurst Down: the device sends a request to a remote server on a UDP port and the server
