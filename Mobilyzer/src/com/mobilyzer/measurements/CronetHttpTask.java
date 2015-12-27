@@ -124,28 +124,33 @@ public class CronetHttpTask extends MeasurementTask {
                         Map<String, String> params) throws InvalidParameterException {
             super(CronetHttpTask.TYPE, key, startTime, endTime, intervalSec, count,
                     priority, contextIntervalSec, params);
-            initializeParams(params);
-            if (this.url == null || this.url.length() == 0) {
-                throw new InvalidParameterException("URL for http task is null");
+            if (params == null) {
+                throw new InvalidParameterException("Parameters for the measurement are not provided");
             }
+            initializeParams(params);
         }
 
         @Override
         protected void initializeParams(Map<String, String> params) {
 
-            if (params == null) {
-                return;
+            String urlParam = params.get("url");
+            if (urlParam == null || urlParam.isEmpty()) {
+                throw new InvalidParameterException("URL for cronet-http task is null");
             }
 
-            this.url = params.get("url");
+            this.url = urlParam;
             if (!this.url.startsWith("http://") && !this.url.startsWith("https://")) {
                 this.url = "http://" + this.url;
             }
 
-            this.method = params.get("method");
-            if (this.method == null || this.method.isEmpty()) {
+            String methodParam = params.get("method");
+            if (methodParam == null || methodParam.isEmpty()) {
                 this.method = "GET";
             }
+            else {
+                this.method = methodParam.toUpperCase();
+            }
+
             this.headers = params.get("headers");
             this.body = params.get("body");
         }
@@ -368,7 +373,7 @@ public class CronetHttpTask extends MeasurementTask {
     @Override
     public String toString() {
         CronetHttpDesc desc = (CronetHttpDesc) measurementDesc;
-        return "[HTTP " + desc.method + "]\n  Target: " + desc.url +
+        return "[CRONETHTTP " + desc.method + "]\n  Target: " + desc.url +
                 "\n  Interval (sec): " + desc.intervalSec + "\n  Next run: " +
                 desc.startTime;
     }

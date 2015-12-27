@@ -84,7 +84,7 @@ public class QuicHttpTask extends MeasurementTask {
     ////////////////////////////////////////////////
     //// CONSTRUCTORS
 
-    public QuicHttpTask(QuicDesc desc) {
+    public QuicHttpTask(MeasurementDesc desc) {
         super(new QuicDesc(desc.key, desc.startTime, desc.endTime, desc.intervalSec,
                 desc.count, desc.priority, desc.contextIntervalSec, desc.parameters));
         this.duration = Config.DEFAULT_HTTP_TASK_DURATION;
@@ -368,7 +368,7 @@ public class QuicHttpTask extends MeasurementTask {
     @Override
     public String toString() {
         QuicDesc desc = (QuicDesc) measurementDesc;
-        return "[Quic " + desc.method + "]\n  Target: " + desc.url +
+        return "[QUICHTTP " + desc.method + "]\n  Target: " + desc.url +
                 "\n  Interval (sec): " + desc.intervalSec + "\n  Next run: " +
                 desc.startTime;
     }
