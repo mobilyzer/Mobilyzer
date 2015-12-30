@@ -25,7 +25,6 @@ import com.mobilyzer.MeasurementDesc;
 import com.mobilyzer.MeasurementResult;
 import com.mobilyzer.MeasurementResult.TaskProgress;
 import com.mobilyzer.MeasurementTask;
-import com.mobilyzer.api.API;
 import com.mobilyzer.exceptions.MeasurementError;
 import com.mobilyzer.util.Logger;
 import com.mobilyzer.util.MeasurementJsonConvertor;
@@ -234,7 +233,8 @@ public class CronetHttpTask extends MeasurementTask {
 
         try {
             URL url = new URL(task.url);
-            CronetEngine.Builder cronetBuilder = new CronetEngine.Builder(API.getApplicationContext());
+            CronetEngine.Builder cronetBuilder =
+                    new CronetEngine.Builder(PhoneUtils.getGlobalContext());
             CronetEngine cronetEngine = cronetBuilder.build();
 
             urlConnection = (HttpURLConnection) cronetEngine.openConnection(url);

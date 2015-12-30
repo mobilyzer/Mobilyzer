@@ -10,7 +10,6 @@ import com.mobilyzer.MeasurementDesc;
 import com.mobilyzer.MeasurementResult;
 import com.mobilyzer.MeasurementResult.TaskProgress;
 import com.mobilyzer.MeasurementTask;
-import com.mobilyzer.api.API;
 import com.mobilyzer.exceptions.MeasurementError;
 import com.mobilyzer.util.Logger;
 import com.mobilyzer.util.MeasurementJsonConvertor;
@@ -214,7 +213,8 @@ public class QuicHttpTask extends MeasurementTask {
             URL url = new URL(task.url);
 
             /* Build new Cronet engine */
-            CronetEngine.Builder cronetBuilder = new CronetEngine.Builder(API.getApplicationContext());
+            CronetEngine.Builder cronetBuilder =
+                    new CronetEngine.Builder(PhoneUtils.getGlobalContext());
             cronetBuilder.enableQUIC(true);
             int quicPort = url.getPort() == -1 ? 443 : url.getPort();
             cronetBuilder.addQuicHint(url.getHost(), quicPort, quicPort);

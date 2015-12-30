@@ -618,11 +618,4 @@ public final class API {
     return MeasurementTask.getTypeForMeasurementName(name);
   }
 
-  public static Context getApplicationContext() {
-    if (apiObject == null) {
-      return null;
-    }
-    return apiObject.applicationContext;
-  }
-
 }
