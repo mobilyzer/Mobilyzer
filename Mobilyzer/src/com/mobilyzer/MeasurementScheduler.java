@@ -185,7 +185,7 @@ public class MeasurementScheduler extends Service {
     filter.addAction(UpdateIntent.MEASUREMENT_PROGRESS_UPDATE_ACTION);
     filter.addAction(UpdateIntent.GCM_MEASUREMENT_ACTION);
     filter.addAction(UpdateIntent.PLT_MEASUREMENT_ACTION);
-
+    filter.addAction(UpdateIntent.MEASUREMENT_INTERMEDIATE_PROGRESS_UPDATE_ACTION);
     broadcastReceiver = new BroadcastReceiver() {
 
       @Override
@@ -324,6 +324,19 @@ public class MeasurementScheduler extends Service {
               Config.TASK_RESUMED)) {
             tasksStatus.put(taskid, TaskStatus.RUNNING);
           }
+		} else if (intent.getAction().equals(UpdateIntent.MEASUREMENT_INTERMEDIATE_PROGRESS_UPDATE_ACTION)){
+        	String IM_taskKey = intent.getStringExtra(UpdateIntent.CLIENTKEY_PAYLOAD);
+            String IM_taskid = intent.getStringExtra(UpdateIntent.TASKID_PAYLOAD);
+            int IM_priority =
+                intent.getIntExtra(UpdateIntent.TASK_PRIORITY_PAYLOAD,
+                    MeasurementTask.INVALID_PRIORITY);
+            Parcelable[] IM_Results = intent.getParcelableArrayExtra(UpdateIntent.INTERMEDIATE_RESULT_PAYLOAD);
+            if (IM_Results != null && IM_Results.length!=0) {
+                sendResultToClient(IM_Results, IM_priority, IM_taskKey, IM_taskid);
+                Logger.i("Sending Intermediate results to client...");
+            	System.out.println("receive the intermediate results");
+            }
+			
         } else if (intent.getAction().equals(UpdateIntent.CHECKIN_ACTION)
             || intent.getAction().equals(UpdateIntent.CHECKIN_RETRY_ACTION)) {
           Logger.d("Checkin intent received");

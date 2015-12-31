@@ -24,8 +24,12 @@ import com.mobilyzer.util.Logger;
 import com.mobilyzer.util.MLabNS;
 import com.mobilyzer.util.MeasurementJsonConvertor;
 import com.mobilyzer.util.PhoneUtils;
+import com.mobilyzer.MeasurementScheduler;
+import com.mobilyzer.UpdateIntent;
+
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -88,6 +92,35 @@ public class TCPThroughputTask extends MeasurementTask {
   private long duration;
   private TaskProgress taskProgress;
   private volatile boolean stopFlag;
+	
+  private Context IM_context = null;  
+  private TaskProgress Intermediate_TaskProgress = TaskProgress.COMPLETED;  
+  
+  // add broadcast to send the intermediate results
+  
+  private void broadcastIntermediateMeasurement(MeasurementResult[] results, Context context) {
+	  this.IM_context = context;
+      Intent intent = new Intent();
+      intent.setAction(UpdateIntent.MEASUREMENT_INTERMEDIATE_PROGRESS_UPDATE_ACTION);
+      
+      intent.putExtra(UpdateIntent.TASK_PRIORITY_PAYLOAD,
+        MeasurementTask.USER_PRIORITY);
+      intent.putExtra(UpdateIntent.TASKID_PAYLOAD, this.getTaskId());
+      intent.putExtra(UpdateIntent.CLIENTKEY_PAYLOAD, this.getKey());
+
+      if (results != null){
+    	  
+        //intent.putExtra(UpdateIntent.TASK_STATUS_PAYLOAD, Config.TASK_FINISHED);
+        intent.putExtra(UpdateIntent.INTERMEDIATE_RESULT_PAYLOAD, results);
+      
+      this.IM_context.sendBroadcast(intent);
+      }else{
+    	 intent.putExtra(UpdateIntent.INTERMEDIATE_RESULT_PAYLOAD, "No intermediate results are broadcasted");
+    	  
+     }
+
+  }
+
 
   // class constructor
   public TCPThroughputTask(MeasurementDesc desc) {
@@ -679,6 +712,7 @@ public class TCPThroughputTask extends MeasurementTask {
    * @param time period increment
    */
   private void updateSize(int delta) {
+	MeasurementResult IntermediateResult = null; 
     double gtime = System.currentTimeMillis() - this.taskStartTime;
     //ignore slow start
     if (gtime<((TCPThroughputDesc)measurementDesc).slow_start_period_sec*this.KSEC)
@@ -696,6 +730,22 @@ public class TCPThroughputTask extends MeasurementTask {
       this.samplingResults = this.insertWithOrder(this.samplingResults, throughput);
       this.accumulativeSize = 0;
       this.startSampleTime = System.currentTimeMillis();
+		
+      this.IM_context = this.getContext();  
+      if (this.IM_context != null){
+    	  PhoneUtils Intermediate_phoneUtils = PhoneUtils.getPhoneUtils();
+    	  IntermediateResult = new MeasurementResult(Intermediate_phoneUtils.getDeviceInfo().deviceId,
+    			  Intermediate_phoneUtils.getDeviceProperty(this.getKey()),TCPThroughputTask.TYPE,
+    			  System.currentTimeMillis()*1000,Intermediate_TaskProgress,this.measurementDesc);
+    	  IntermediateResult.addResult("tcp_speed_results", this.samplingResults);
+    	  IntermediateResult.addResult("data_limit_exceeded", this.DATA_LIMIT_EXCEEDED);
+    	  IntermediateResult.addResult("duration", time);
+    	  IntermediateResult.addResult("server_version", this.serverVersion);
+    	  MeasurementResult[] IM_mrArray = new MeasurementResult[1];
+      	  IM_mrArray[0] = IntermediateResult;
+      	  broadcastIntermediateMeasurement(IM_mrArray,this.IM_context); 
+    	  
+      }
     }  
   }
 
