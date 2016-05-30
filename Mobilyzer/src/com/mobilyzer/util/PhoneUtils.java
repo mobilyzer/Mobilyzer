@@ -39,6 +39,7 @@ import android.telephony.CellInfo;
 import android.telephony.CellInfoCdma;
 import android.telephony.CellInfoGsm;
 import android.telephony.CellInfoLte;
+import android.telephony.CellInfoWcdma;
 import android.telephony.NeighboringCellInfo;
 import android.telephony.PhoneStateListener;
 import android.telephony.SignalStrength;
@@ -320,7 +321,7 @@ public class PhoneUtils {
 	};
 
 	/** Returns mobile data network connection type. */
-	private String getTelephonyNetworkType() {
+	public String getTelephonyNetworkType() {
 		assert NETWORK_TYPES[14].compareTo("EHRPD") == 0;
 
 		int networkType = telephonyManager.getNetworkType();
@@ -681,6 +682,8 @@ public class PhoneUtils {
 				results.put("GSM", ((CellInfoGsm) cellInfo).getCellSignalStrength().getDbm());
 			}else if(cellInfo.getClass().equals(CellInfoCdma.class)){
 				results.put("CDMA", ((CellInfoCdma) cellInfo).getCellSignalStrength().getDbm());
+			}else if(cellInfo.getClass().equals(CellInfoWcdma.class)){
+              results.put("WCDMA", ((CellInfoWcdma) cellInfo).getCellSignalStrength().getDbm());
 			}
 		}
 		
@@ -735,7 +738,7 @@ public class PhoneUtils {
 
 			rssis+="CDMA:"+signalStrength.getCdmaDbm()+"|";
 			rssis+="EVDO:"+signalStrength.getEvdoDbm()+"|";
-			rssis+="GSM:"+signalStrength.getGsmSignalStrength()+"|";
+			rssis+="GSM:"+((2*signalStrength.getGsmSignalStrength())-113)+"|";
 			try {
 				Method[] methods = android.telephony.SignalStrength.class
 						.getMethods();
@@ -996,7 +999,8 @@ public class PhoneUtils {
 		} else {
 			location = getLocation();
 		}
-		
+		//TODO Test on Veriozn and Sprint, as result may be unreliable on CDMA
+		// networks (use getPhoneType() to determine if on a CDMA network)
 		String networkCountryIso = telephonyManager.getNetworkCountryIso();
 
 //		NetworkInfo activeNetwork = connectivityManager.getActiveNetworkInfo();
