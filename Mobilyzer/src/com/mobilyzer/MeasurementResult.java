@@ -24,10 +24,14 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.StringBuilderPrinter;
 
+import com.mobilyzer.measurements.CronetHttpTask;
+import com.mobilyzer.measurements.CronetHttpTask.CronetHttpDesc;
 import com.mobilyzer.measurements.DnsLookupTask;
 import com.mobilyzer.measurements.HttpTask;
 import com.mobilyzer.measurements.ParallelTask;
 import com.mobilyzer.measurements.PingTask;
+import com.mobilyzer.measurements.QuicHttpTask;
+import com.mobilyzer.measurements.QuicHttpTask.QuicDesc;
 import com.mobilyzer.measurements.RRCTask;
 import com.mobilyzer.measurements.SequentialTask;
 import com.mobilyzer.measurements.TCPThroughputTask;
@@ -247,7 +251,11 @@ public class MeasurementResult implements Parcelable {
         getPingResult(printer, values);
       } else if (type.equals(HttpTask.TYPE)) {
         getHttpResult(printer, values);
-      } else if (type.equals(DnsLookupTask.TYPE)) {
+      } else if (type.equals(CronetHttpTask.TYPE)) {
+        getCronetHttpResult(printer, values);
+      } else if (type.equals(QuicHttpTask.TYPE)) {
+        getQuicHttpResult(printer, values);
+      }else if (type.equals(DnsLookupTask.TYPE)) {
         getDnsResult(printer, values);
       } else if (type.equals(TracerouteTask.TYPE)) {
         getTracerouteResult(printer, values);
@@ -329,6 +337,50 @@ public class MeasurementResult implements Parcelable {
       printer.println("Http paused!");
     } else {
       printer.println("Http download failed, status code " + values.get("code"));
+      printer.println("Error: " + values.get("error"));
+    }
+  }
+
+  private void getQuicHttpResult(StringBuilderPrinter printer, HashMap<String, String> values) {
+    QuicDesc desc = (QuicDesc) parameters;
+    printer.println("[QUIC]");
+    printer.println("URL: " + desc.url);
+    printer.println("Timestamp: " + Util.getTimeStringFromMicrosecond(properties.timestamp));
+    printIPTestResult(printer);
+
+    if (taskProgress == TaskProgress.COMPLETED) {
+      int headerLen = Integer.parseInt(values.get("headers_len"));
+      int bodyLen = Integer.parseInt(values.get("body_len"));
+      int time = Integer.parseInt(values.get("time_ms"));
+      printer.println("");
+      printer.println("Downloaded " + (headerLen + bodyLen) + " bytes in " + time + " ms");
+      printer.println("Bandwidth: " + (headerLen + bodyLen) * 8 / time + " Kbps");
+    } else if (taskProgress == TaskProgress.PAUSED) {
+      printer.println("Quic Http paused!");
+    } else {
+      printer.println("Quic Http download failed, status code " + values.get("code"));
+      printer.println("Error: " + values.get("error"));
+    }
+  }
+
+  private void getCronetHttpResult(StringBuilderPrinter printer, HashMap<String, String> values) {
+    CronetHttpDesc desc = (CronetHttpDesc) parameters;
+    printer.println("[CronetHTTP]");
+    printer.println("URL: " + desc.url);
+    printer.println("Timestamp: " + Util.getTimeStringFromMicrosecond(properties.timestamp));
+    printIPTestResult(printer);
+
+    if (taskProgress == TaskProgress.COMPLETED) {
+      int headerLen = Integer.parseInt(values.get("headers_len"));
+      int bodyLen = Integer.parseInt(values.get("body_len"));
+      int time = Integer.parseInt(values.get("time_ms"));
+      printer.println("");
+      printer.println("Downloaded " + (headerLen + bodyLen) + " bytes in " + time + " ms");
+      printer.println("Bandwidth: " + (headerLen + bodyLen) * 8 / time + " Kbps");
+    } else if (taskProgress == TaskProgress.PAUSED) {
+      printer.println("CronetHttp paused!");
+    } else {
+      printer.println("CronetHttp download failed, status code " + values.get("code"));
       printer.println("Error: " + values.get("error"));
     }
   }

@@ -14,23 +14,15 @@
  */
 package com.mobilyzer.api;
 
-import java.security.InvalidParameterException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
-
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
-import android.os.Bundle;
 
 import com.mobilyzer.Config;
 import com.mobilyzer.MeasurementScheduler;
@@ -38,27 +30,39 @@ import com.mobilyzer.MeasurementScheduler.DataUsageProfile;
 import com.mobilyzer.MeasurementTask;
 import com.mobilyzer.UpdateIntent;
 import com.mobilyzer.exceptions.MeasurementError;
+import com.mobilyzer.measurements.CronetHttpTask;
+import com.mobilyzer.measurements.CronetHttpTask.CronetHttpDesc;
 import com.mobilyzer.measurements.DnsLookupTask;
+import com.mobilyzer.measurements.DnsLookupTask.DnsLookupDesc;
 import com.mobilyzer.measurements.HttpTask;
+import com.mobilyzer.measurements.HttpTask.HttpDesc;
 import com.mobilyzer.measurements.PageLoadTimeTask;
 import com.mobilyzer.measurements.PageLoadTimeTask.PageLoadTimeDesc;
 import com.mobilyzer.measurements.ParallelTask;
-import com.mobilyzer.measurements.PingTask;
-import com.mobilyzer.measurements.SequentialTask;
-import com.mobilyzer.measurements.TCPThroughputTask;
-import com.mobilyzer.measurements.TracerouteTask;
-import com.mobilyzer.measurements.UDPBurstTask;
-import com.mobilyzer.measurements.DnsLookupTask.DnsLookupDesc;
-import com.mobilyzer.measurements.HttpTask.HttpDesc;
 import com.mobilyzer.measurements.ParallelTask.ParallelDesc;
+import com.mobilyzer.measurements.PingTask;
 import com.mobilyzer.measurements.PingTask.PingDesc;
+import com.mobilyzer.measurements.QuicHttpTask;
+import com.mobilyzer.measurements.QuicHttpTask.QuicDesc;
+import com.mobilyzer.measurements.SequentialTask;
 import com.mobilyzer.measurements.SequentialTask.SequentialDesc;
+import com.mobilyzer.measurements.TCPThroughputTask;
 import com.mobilyzer.measurements.TCPThroughputTask.TCPThroughputDesc;
+import com.mobilyzer.measurements.TracerouteTask;
 import com.mobilyzer.measurements.TracerouteTask.TracerouteDesc;
+import com.mobilyzer.measurements.UDPBurstTask;
 import com.mobilyzer.measurements.UDPBurstTask.UDPBurstDesc;
 import com.mobilyzer.measurements.VideoQoETask;
 import com.mobilyzer.measurements.VideoQoETask.VideoQoEDesc;
 import com.mobilyzer.util.Logger;
+
+import java.security.InvalidParameterException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 
 /**
  * @author jackjia,Hongyi Yao (hyyao@umich.edu)
@@ -68,9 +72,10 @@ import com.mobilyzer.util.Logger;
  * User: register BroadcastReceiver for userResultAction and serverResultAction
  */
 public final class API {
+
   public enum TaskType {
     DNSLOOKUP, HTTP, PING, TRACEROUTE, TCPTHROUGHPUT, UDPBURST,
-    PARALLEL, SEQUENTIAL, INVALID, PLT, VIDEOQOE
+    PARALLEL, SEQUENTIAL, INVALID, PLT, VIDEOQOE, QUICHTTP, CRONETHTTP
   }
 
   /**
@@ -90,11 +95,12 @@ public final class API {
   
   public final static int USER_PRIORITY = MeasurementTask.USER_PRIORITY;
   public final static int INVALID_PRIORITY = MeasurementTask.INVALID_PRIORITY;
-  
+
   private Context applicationContext;
   
   private boolean isBound = false;
   private boolean isBindingToService = false;
+
   Messenger mSchedulerMessenger = null;
   
   private String clientKey;
@@ -281,6 +287,14 @@ public final class API {
       case HTTP:
         task = new HttpTask(new HttpDesc(clientKey, startTime, endTime
           , intervalSec, count, priority, contextIntervalSec, params));
+        break;
+      case QUICHTTP:
+        task = new QuicHttpTask(new QuicDesc(clientKey, startTime, endTime,
+                intervalSec, count, priority, contextIntervalSec, params));
+        break;
+      case CRONETHTTP:
+        task = new CronetHttpTask(new CronetHttpDesc(clientKey, startTime, endTime,
+                intervalSec, count, priority, contextIntervalSec, params));
         break;
       case PING:
         task = new PingTask(new PingDesc(clientKey, startTime, endTime
@@ -603,4 +617,5 @@ public final class API {
   public static String getTypeForMeasurementName(String name) {
     return MeasurementTask.getTypeForMeasurementName(name);
   }
+
 }
