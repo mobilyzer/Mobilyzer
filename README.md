@@ -27,30 +27,30 @@ This branch implements the context-triggered measurement framework atop Mobilyze
 
 ### API
 
-To specify the triggered condtion, when creating a new measurement task, a parameter with key "prerequisites" are required. The prerequisite can be expressed as single prerequisites connected with "or" and "and". Each single prerequisite can be expressed as "PrerequisiteName CompareOperator Value".
+To specify the triggered condtion, when creating a new measurement task, a parameter with key "prerequisites" is required. The prerequisite can be expressed as single prerequisites connected with "or" and "and". Each single prerequisite can be expressed as "PrerequisiteName CompareOperator Value".
 
 For example, if we want to do a measurement if the network type is cellular and rssi is less than 30, or the network type is wifi and rssi is less than 20, we can express the prerequisite as "network.type<>wifi & network.cellular.rssi<30 | network.type=wifi & network.wifi.rssi<20".
 
 
 ### Supported context
 
-network.type
-network.wifi.rssi
-network.wifi.ssid
-network.wifi.rssid
-network.cellular.rssi
-screen.status
-call.status
-movement.count (the total step count)
-movement.status (whether the user is moving or not)
-result.type (the type of last measurement)
-result.ping.avgrtt
-location.coordinate
-location.longitude
-location.latitude
-location.alitude
-location.speed
-activity.type (the movement activity, i.e. walking, driving etc.)
-activity.lasttime (the last update time)
-time.time
+- network.type
+- network.wifi.rssi
+- network.wifi.ssid
+- network.wifi.rssid
+- network.cellular.rssi
+- screen.status
+- call.status
+- movement.count (the total step count)
+- movement.status (whether the user is moving or not)
+- result.type (the type of last measurement)
+- result.ping.avgrtt
+- location.coordinate
+- location.longitude
+- location.latitude
+- location.alitude
+- location.speed
+- activity.type (the movement activity, i.e. walking, driving etc.)
+- activity.lasttime (the last update time)
+- time.time
 
