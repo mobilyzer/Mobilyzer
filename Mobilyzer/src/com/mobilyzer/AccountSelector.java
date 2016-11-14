@@ -14,6 +14,7 @@
  */
 package com.mobilyzer;
 
+import android.Manifest;
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.accounts.AccountManagerCallback;
@@ -23,8 +24,10 @@ import android.accounts.OperationCanceledException;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.v4.content.ContextCompat;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
@@ -104,10 +107,23 @@ public class AccountSelector {
     return this.lastAuthTime;
   }
   
+  private static boolean hasGetAccountsPermission(Context context){
+	  if (ContextCompat.checkSelfPermission(context, Manifest.permission.GET_ACCOUNTS)==PackageManager.PERMISSION_GRANTED){
+		  return true;
+	  }
+	  return false;
+	  
+  }
+  
   /**
    * Return the list of account names for users to select
    */
   public static String[] getAccountList(Context context) {
+	if (!hasGetAccountsPermission(context)){
+		String[] accountNames = new String[1];
+		accountNames[0] = Config.DEFAULT_USER;
+		return accountNames;
+	}
     AccountManager accountManager = AccountManager.get(context.getApplicationContext());
     Account[] accounts = accountManager.getAccountsByType(ACCOUNT_TYPE);
     int numAccounts = accounts == null ? 1 : accounts.length + 1;
@@ -143,6 +159,10 @@ public class AccountSelector {
       // There will be no effect on the token if it is still valid
       Logger.i("Invalidating token");
       accountManager.invalidateAuthToken(ACCOUNT_TYPE, this.authToken);
+    }
+    if (!hasGetAccountsPermission(context)){
+    	isAnonymous = true;
+    	return;
     }
     
     Account[] accounts = accountManager.getAccountsByType(ACCOUNT_TYPE);

@@ -14,11 +14,13 @@
  */
 package com.mobilyzer.util;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
@@ -35,6 +37,7 @@ import android.os.Looper;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.provider.Settings.Secure;
+import android.support.v4.content.ContextCompat;
 import android.telephony.CellInfo;
 import android.telephony.CellInfoCdma;
 import android.telephony.CellInfoGsm;
@@ -446,6 +449,10 @@ public class PhoneUtils {
 	 * @return the location of the device
 	 */
 	public Location getLocation() {
+		if(!(ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION)==PackageManager.PERMISSION_GRANTED)){
+			return new Location("unknown");
+		}
+		
 		try {
 			initLocation();
 			Location location = locationManager.getLastKnownLocation(locationProviderName);
