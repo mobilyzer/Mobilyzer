@@ -3,6 +3,8 @@ Mobilyzer
 
 Mobilyzer is a network measurment platform, developed for Android applications. Apps can include Mobilyzer to issue various types of measurement experiments from the server and client side.
 
+More info: http://mobilyzer-project.mobi/
+
 =============================
 
 ##Important: How to Integrate Mobilyzer for Mobile Apps
