@@ -21,10 +21,8 @@ import android.util.Base64;
 import java.io.IOException;
 import java.io.InvalidClassException;
 import java.lang.reflect.Method;
-import java.net.InetAddress;
 import java.net.SocketAddress;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -413,25 +411,27 @@ public class DnsLookupTask extends MeasurementTask {
             PhoneUtils phoneUtils = PhoneUtils.getPhoneUtils();
             ArrayList<MeasurementResult> results = new ArrayList<MeasurementResult>();
             MeasurementResult result;
-//            for (DNSWrapper wrap : responses) {
             result = new MeasurementResult(
-            		phoneUtils.getDeviceInfo().deviceId,
-            		phoneUtils.getDeviceProperty(this.getKey()),
-            		DnsLookupTask.TYPE,
-            		System.currentTimeMillis() * 1000,
-            		TaskProgress.COMPLETED, this.measurementDesc);
+                    phoneUtils.getDeviceInfo().deviceId,
+                    phoneUtils.getDeviceProperty(this.getKey()),
+                    DnsLookupTask.TYPE,
+                    System.currentTimeMillis() * 1000,
+                    TaskProgress.COMPLETED, this.measurementDesc);
 
             // now turn the result into an array of hashmaps with the data we care about
 
-            List<HashMap<String, Object>> data = extractResults(responses);
-            result.addResult("results", data);
-            result.addResult("target", desc.target);
-            result.addResult("qtype", desc.qtype);
-            result.addResult("qclass", desc.qclass);
+            HashMap<String, Object> data = extractResults(responses);
+            for(String key: data.keySet()){
+              result.addResult(key, data.get(key));
+            }
+
+//            result.addResult("results", data);
+//            result.addResult("target", desc.target);
+//            result.addResult("qtype", desc.qtype);
+//            result.addResult("qclass", desc.qclass);
 
             Logger.i(MeasurementJsonConvertor.toJsonString(result));
             results.add(result);
-//            }
 
             // create the result array to return
             MeasurementResult resultsFinal [] = new MeasurementResult[results.size()];
@@ -443,48 +443,51 @@ public class DnsLookupTask extends MeasurementTask {
         }
     }
 
-    public List<HashMap<String, Object>> extractResults(ArrayList<DNSWrapper> responses) {
-        ArrayList<HashMap<String, Object>> data = new ArrayList<HashMap<String, Object>>();
+    public HashMap<String, Object> extractResults(ArrayList<DNSWrapper> responses) {
+        HashMap<String, Object> data = new HashMap<String, Object>();
+        int index = 0;
+        data.put("queries", responses.size());
         for (DNSWrapper wrap : responses) {
             Message resp = null;
             if (wrap.isValid) {
                 resp = wrap.response;
             }
-            HashMap<String, Object> item = new HashMap<String, Object>();
-            item.put("server", wrap.server);
-            item.put("qryId", wrap.qid);
-            item.put("respId", wrap.id);
-            item.put("payload", wrap.rawOutput);
-            item.put("respTime", wrap.respTime);
-            item.put("isValid", wrap.isValid);
-            item.put("rcode", Rcode.string(resp.header.getRcode()));
-            item.put("tc", resp.getHeader().getFlag(Flags.TC));
+            data.put("server_" + index, wrap.server);
+            data.put("qryId_" + index, wrap.qid);
+            data.put("respId_" + index, wrap.id);
+            data.put("payload_" + index, wrap.rawOutput);
+            data.put("respTime_" + index, wrap.respTime);
+            data.put("isValid_" + index, wrap.isValid);
+            data.put("rcode_" + index, Rcode.string(resp.header.getRcode()));
+            data.put("tc_" + index, resp.getHeader().getFlag(Flags.TC));
 
             // process the question
             Record[] questionRecs = resp.getSectionArray(0);
             if (questionRecs.length == 0) {
-                item.put("domain", null);
-                item.put("qtype", null);
-                item.put("qclass", null);
+                data.put("domain_" + index, null);
+                data.put("qtype_" + index, null);
+                data.put("qclass_" + index, null);
             } else {
                 Record rec = questionRecs[0];
-                item.put("domain", rec.name.toString());
-                item.put("qtype", Type.string(rec.type));
-                item.put("qclass", DClass.string(rec.dclass));
+                data.put("domain_" + index, rec.name.toString());
+                data.put("qtype_" + index, Type.string(rec.type));
+                data.put("qclass_" + index, DClass.string(rec.dclass));
             }
 
             // now process the answers
             List<HashMap<String, String>> answers = new ArrayList<HashMap<String, String>>();
             questionRecs = resp.getSectionArray(1);
+            data.put("answers_" + index, questionRecs.length);
+            int a_index = 0;
             for (Record recd : questionRecs) {
                 HashMap<String, String> entry = new HashMap<String, String>();
-                entry.put("name", recd.name.toString());
-                entry.put("rtype", Type.string(recd.type));
-                entry.put("rdata", recd.rrToString());
-                answers.add(entry);
+                data.put("name_"+index+"_"+a_index, recd.name.toString());
+                data.put("rtype_"+index+"_"+a_index, Type.string(recd.type));
+                data.put("rdata_"+index+"_"+a_index, recd.rrToString());
+//                answers.add(entry);
+                a_index += 1;
             }
-            item.put("answers", answers.toArray());
-            data.add(item);
+            index += 1;
         }
         return data;
     }
