@@ -372,6 +372,10 @@ public class PhoneUtils {
 	 * Samsung phones.
 	 */
 	public String getCellInfo(boolean cidOnly) {
+	    if(!(ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION)==PackageManager.PERMISSION_GRANTED)){
+          return null;
+	    }
+
 		initNetwork();
 		List<NeighboringCellInfo> infos = telephonyManager.getNeighboringCellInfo();
 		StringBuffer buf = new StringBuffer();
@@ -619,9 +623,11 @@ public class PhoneUtils {
 		String cellRssi1=getCurrentRssi();
 		String cellRssi2="";
 		HashMap<String, Integer> cellInfosMap=getAllCellInfoSignalStrength();
-        for (String cinfo: cellInfosMap.keySet()){
-        	cellRssi2+=cinfo+":"+cellInfosMap.get(cinfo)+"|";
-        }
+		if (cellInfosMap!=null) {
+		  for (String cinfo: cellInfosMap.keySet()){
+        	  cellRssi2+=cinfo+":"+cellInfosMap.get(cinfo)+"|";
+          }
+		}
         
         return cellRssi1+cellRssi2;
 		
@@ -673,6 +679,9 @@ public class PhoneUtils {
 	}
 	
 	public HashMap<String, Integer> getAllCellInfoSignalStrength(){
+	    if(!(ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION)==PackageManager.PERMISSION_GRANTED)){
+          return null;
+	    }
 		TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
 		List<CellInfo> cellInfos = (List<CellInfo>) telephonyManager.getAllCellInfo();
 		
@@ -820,8 +829,11 @@ public class PhoneUtils {
 	}
 
 	private String getDeviceId() {
-		// This ID is permanent to a physical phone.
-		String deviceId = telephonyManager.getDeviceId();  
+	    String deviceId=null;
+	    if(ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE)==PackageManager.PERMISSION_GRANTED){
+	      // This ID is permanent to a physical phone.
+	      deviceId = telephonyManager.getDeviceId();  
+	    }
 
 
 		// "generic" means the emulator.
