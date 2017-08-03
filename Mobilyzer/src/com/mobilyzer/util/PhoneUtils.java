@@ -27,7 +27,11 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.location.LocationProvider;
 import android.net.ConnectivityManager;
+import android.net.LinkProperties;
+import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
+import android.net.NetworkRequest;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.BatteryManager;
@@ -68,6 +72,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 import com.mobilyzer.Config;
 import com.mobilyzer.DeviceInfo;
@@ -151,6 +156,9 @@ public class PhoneUtils {
 	//server configuration port on M-Lab servers 
 	private int portNum = 6003;
 	private int tcpTimeout = 3000;
+
+
+	private ConnectivityManager.NetworkCallback connectivityNetworkCallback = null;
 
 	protected PhoneUtils(Context context) {
 		this.context = context;
@@ -372,9 +380,9 @@ public class PhoneUtils {
 	 * Samsung phones.
 	 */
 	public String getCellInfo(boolean cidOnly) {
-	    if(!(ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION)==PackageManager.PERMISSION_GRANTED)){
-          return null;
-	    }
+		if(!(ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION)==PackageManager.PERMISSION_GRANTED)){
+			return null;
+		}
 
 		initNetwork();
 		List<NeighboringCellInfo> infos = telephonyManager.getNeighboringCellInfo();
@@ -624,9 +632,9 @@ public class PhoneUtils {
 		String cellRssi2="";
 		HashMap<String, Integer> cellInfosMap=getAllCellInfoSignalStrength();
 		if (cellInfosMap!=null) {
-		  for (String cinfo: cellInfosMap.keySet()){
-        	  cellRssi2+=cinfo+":"+cellInfosMap.get(cinfo)+"|";
-          }
+			for (String cinfo : cellInfosMap.keySet()) {
+				cellRssi2 += cinfo + ":" + cellInfosMap.get(cinfo) + "|";
+			}
 		}
         
         return cellRssi1+cellRssi2;
@@ -679,9 +687,9 @@ public class PhoneUtils {
 	}
 	
 	public HashMap<String, Integer> getAllCellInfoSignalStrength(){
-	    if(!(ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION)==PackageManager.PERMISSION_GRANTED)){
-          return null;
-	    }
+		if(!(ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION)==PackageManager.PERMISSION_GRANTED)){
+			return null;
+		}
 		TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
 		List<CellInfo> cellInfos = (List<CellInfo>) telephonyManager.getAllCellInfo();
 		
@@ -718,8 +726,53 @@ public class PhoneUtils {
 		}
 		return -1;
 	}
-	
-	
+
+	public void switchNetwork(boolean toWiFi, CountDownLatch latch){
+		ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+		NetworkRequest.Builder request = new NetworkRequest.Builder();
+
+		if(toWiFi){
+			request.addTransportType(NetworkCapabilities.TRANSPORT_WIFI);
+		}else{
+			request.addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR);
+		}
+		request.addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
+////		request.addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED);
+//		ConnectivityManager.NetworkCallback connectivityNetworkCallback = new ConnectivityNetworkCallback(latch, cm);
+		connectivityNetworkCallback = new ConnectivityNetworkCallback(latch, cm);
+		cm.requestNetwork(request.build(), connectivityNetworkCallback);
+
+	}
+
+	public void unregisterNetworkCallback(){
+		if (connectivityNetworkCallback!=null){
+			ConnectivityManager cm=((ConnectivityNetworkCallback)connectivityNetworkCallback).getConnectivityManager();
+			cm.bindProcessToNetwork(null);
+			cm.unregisterNetworkCallback(connectivityNetworkCallback);
+			connectivityNetworkCallback = null;
+		}
+	}
+
+	class ConnectivityNetworkCallback extends ConnectivityManager.NetworkCallback{
+		private CountDownLatch latch;
+		private  ConnectivityManager cm;
+		public ConnectivityNetworkCallback(CountDownLatch l, ConnectivityManager cm){
+			this.latch=l;
+			this.cm=cm;
+		}
+
+		public ConnectivityManager getConnectivityManager(){
+			return this.cm;
+		}
+		@Override
+		public void onAvailable(Network network) {
+			super.onAvailable(network);
+			cm.setProcessDefaultNetwork(network);
+//			cm.bindProcessToNetwork(network);
+			this.latch.countDown();
+//			this.cm.unregisterNetworkCallback(this);
+		}
+	}
 	
 
 	private synchronized void updateBatteryStat(Intent powerIntent) {
@@ -829,11 +882,12 @@ public class PhoneUtils {
 	}
 
 	private String getDeviceId() {
-	    String deviceId=null;
-	    if(ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE)==PackageManager.PERMISSION_GRANTED){
-	      // This ID is permanent to a physical phone.
-	      deviceId = telephonyManager.getDeviceId();  
-	    }
+		String deviceId=null;
+		if(ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE)==PackageManager.PERMISSION_GRANTED){
+			// This ID is permanent to a physical phone.
+			deviceId = telephonyManager.getDeviceId();
+		}
+
 
 
 		// "generic" means the emulator.
