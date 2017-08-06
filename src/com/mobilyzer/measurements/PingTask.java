@@ -15,6 +15,7 @@
 
 package com.mobilyzer.measurements;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -49,10 +50,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Map;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLSession;
-
 /**
  * A callable that executes a ping task using one of three methods
  */
@@ -71,18 +68,18 @@ public class PingTask extends MeasurementTask{
   private long duration;
 
   private Process pingProc = null;
-  public static final String PING_METHOD_CMD  = "ping_cmd";
-  public static final String PING_METHOD_JAVA = "java_ping";
-  public static final String PING_METHOD_HTTP = "http";
+  private String PING_METHOD_CMD  = "ping_cmd";
+  private String PING_METHOD_JAVA = "java_ping";
+  private String PING_METHOD_HTTP = "http";
   private String targetIp = null;
   //Track data consumption for this task to avoid exceeding user's limit  
   private long dataConsumed;
   
   
-  private MeasurementScheduler scheduler = null;  // added by Clarence
+  private Context context = null;  // added by Clarence
   
-  private void broadcastIntermediateMeasurement(MeasurementResult[] results, MeasurementScheduler scheduler) {
-	  this.scheduler = scheduler;
+  private void broadcastIntermediateMeasurement(MeasurementResult[] results, Context context) {
+	  this.context = context;
       Intent intent = new Intent();
       intent.setAction(UpdateIntent.MEASUREMENT_INTERMEDIATE_PROGRESS_UPDATE_ACTION);
       //TODO fixed one value priority for all users task?
@@ -96,7 +93,7 @@ public class PingTask extends MeasurementTask{
         //intent.putExtra(UpdateIntent.TASK_STATUS_PAYLOAD, Config.TASK_FINISHED);
         intent.putExtra(UpdateIntent.INTERMEDIATE_RESULT_PAYLOAD, results);
       
-      this.scheduler.sendBroadcast(intent);
+      this.context.sendBroadcast(intent);
       }else{
     	 intent.putExtra(UpdateIntent.INTERMEDIATE_RESULT_PAYLOAD, "No intermediate results are broadcasted");
     	  
@@ -118,8 +115,6 @@ public class PingTask extends MeasurementTask{
     public int pingTimeoutSec = PingTask.DEFAULT_PING_TIMEOUT;
     public int pingTimeToLive= PingTask.DEFAULT_PING_TTL;
     public double pingIcmpIntervalSec= Config.DEFAULT_INTERVAL_BETWEEN_ICMP_PACKET_SEC;
-    public String pingMethod = null;
-    public boolean useHttps = false;
 
 
     public PingDesc(String key, Date startTime,
@@ -160,14 +155,6 @@ public class PingTask extends MeasurementTask{
         		Double.parseDouble(val) > 0) {
         	this.pingIcmpIntervalSec = Double.parseDouble(val);  
         }
-        if ((val = params.get("ping_method")) != null && val.length() > 0 && 
-            (val.equals(PING_METHOD_CMD) || val.equals(PING_METHOD_JAVA) || val.equals(PING_METHOD_HTTP))) {
-            this.pingMethod = new String(val);
-        }
-        if ((val = params.get("use_https")) != null && val.length() > 0 && 
-            (Boolean.parseBoolean(val)== true)) {
-            this.useHttps = true;
-        }
       } catch (NumberFormatException e) {
         throw new InvalidParameterException("PingTask cannot be created due to invalid params");
       }
@@ -186,8 +173,6 @@ public class PingTask extends MeasurementTask{
       pingTimeoutSec = in.readInt();
       pingTimeToLive = in.readInt();
       pingIcmpIntervalSec = in.readDouble();
-      pingMethod = in.readString();
-      useHttps = in.readByte() != 0;
     }
 
     public static final Parcelable.Creator<PingDesc> CREATOR
@@ -210,8 +195,6 @@ public class PingTask extends MeasurementTask{
       dest.writeInt(pingTimeoutSec);
       dest.writeInt(pingTimeToLive);
       dest.writeDouble(pingIcmpIntervalSec);
-      dest.writeString(pingMethod);
-      dest.writeByte((byte) (useHttps ? 1 : 0));
     }
   }
 
@@ -287,13 +270,14 @@ public class PingTask extends MeasurementTask{
       throw new MeasurementError("Unknown host " + desc.target);
     }
     result=new MeasurementResult[1];
-    if(desc.pingMethod==null) {
-      try {
-        Logger.i("running ping command");
-        // Prevents the phone from going to low-power mode where WiFi turns off
-        result[0]=executePingCmdTask(ipByteLength);
-        return result;
-      }catch (MeasurementError e) {
+    try {
+      Logger.i("running ping command");
+      // Prevents the phone from going to low-power mode where WiFi turns off
+      result[0]=executePingCmdTask(ipByteLength);
+      return result;
+    }
+
+    catch (MeasurementError e) {
       try {
         Logger.i("running java ping");
         result[0]=executeJavaPingTask();
@@ -304,21 +288,6 @@ public class PingTask extends MeasurementTask{
         return result;
       }
     }
-      }else if(desc.pingMethod.equals(PING_METHOD_CMD)){
-        Logger.i("running ping command");
-        result[0] = executePingCmdTask(ipByteLength);
-        return result;
-
-      }else if(desc.pingMethod.equals(PING_METHOD_JAVA)){
-        Logger.i("running java ping");
-        result[0] = executeJavaPingTask();
-        return result;
-      }else {
-        Logger.i("running http ping");
-        result[0] = executeHttpPingTask();
-        return result;
-
-     }
   }
 
   @Override
@@ -477,13 +446,13 @@ public class PingTask extends MeasurementTask{
           int packetsReceived = packetLossInfo[1];
           packetLoss = 1 - ((double) packetsReceived / (double) packetsSent);
         }
-        this.scheduler = this.getScheduler();
-        if ( this.scheduler != null ){
+        this.context = this.getContext();
+        if ( this.context != null ){
         	if (rrts.size() >= 2  && (rrts.size() < Config.PING_COUNT_PER_MEASUREMENT) && (extractedValues != null) ){
         		IM_measurementResult = constructResult(rrts,packetLoss,
             			rrts.size(),PING_METHOD_CMD);
         		IM_result[0] = IM_measurementResult;
-        		broadcastIntermediateMeasurement(IM_result,this.scheduler);
+        		broadcastIntermediateMeasurement(IM_result,this.context);
         		
         		
         	}
@@ -553,12 +522,12 @@ public class PingTask extends MeasurementTask{
           packetLoss = 1 -
                 ((double) rrts.size() / (i+1));
           dataConsumed += pingTask.packetSizeByte * (i+1) * 2;
-          this.scheduler = this.getScheduler();
-          if ( this.scheduler != null){
+          this.context = this.getContext();
+          if ( this.context != null){
         	  IM_measurementResult = constructResult(rrts,packetLoss,
             			(i+1),PING_METHOD_JAVA);
               IM_result[0] = IM_measurementResult;
-              broadcastIntermediateMeasurement(IM_result,this.scheduler);
+              broadcastIntermediateMeasurement(IM_result,this.context);
         	  
           }
           
@@ -614,53 +583,31 @@ public class PingTask extends MeasurementTask{
     try {
       long totalPingDelay = 0;
 
-      URL url = null;
-      if (pingTask.useHttps){
-        url = new URL("https://"+ pingTask.target);
-      }else{
-        url = new URL("http://"+ pingTask.target);
-      }
+      URL url = new URL("http://"+ pingTask.target);
 
       int timeOut = (int) (3000 * (double) pingTask.pingTimeoutSec /
           Config.PING_COUNT_PER_MEASUREMENT);
 
       for (int i = 0; i < Config.PING_COUNT_PER_MEASUREMENT; i++) {
         pingStartTime = System.currentTimeMillis();
-        if(pingTask.useHttps){
-          HttpsURLConnection httpsClient = (HttpsURLConnection) url.openConnection();
-          httpsClient.setRequestProperty("Connection", "close");
-          httpsClient.setRequestMethod("HEAD");
-          httpsClient.setReadTimeout(timeOut);
-          httpsClient.setConnectTimeout(timeOut);
-          httpsClient.setHostnameVerifier(new HostnameVerifier() {
-            @Override
-            public boolean verify(String hostname, SSLSession session) {
-              return true;
-            }
-          });
-          httpsClient.connect();
-          pingEndTime = System.currentTimeMillis();
-          httpsClient.disconnect();
-        }else{
-          HttpURLConnection httpClient = (HttpURLConnection) url.openConnection();
-          httpClient.setRequestProperty("Connection", "close");
-          httpClient.setRequestMethod("HEAD");
-          httpClient.setReadTimeout(timeOut);
-          httpClient.setConnectTimeout(timeOut);
-          httpClient.connect();
-          pingEndTime = System.currentTimeMillis();
-          httpClient.disconnect();
-        }
+        HttpURLConnection httpClient = (HttpURLConnection) url.openConnection();
+        httpClient.setRequestProperty("Connection", "close");
+        httpClient.setRequestMethod("HEAD");
+        httpClient.setReadTimeout(timeOut);
+        httpClient.setConnectTimeout(timeOut);
+        httpClient.connect();
+        pingEndTime = System.currentTimeMillis();
+        httpClient.disconnect();
         rrts.add((double) (pingEndTime - pingStartTime));
         packetLoss = 1 -
                 ((double) rrts.size() / (i+1));
         dataConsumed += pingTask.packetSizeByte * (i+1) * 2;
-        this.scheduler = this.getScheduler();
-        if ( this.scheduler != null){
+        this.context = this.getContext();
+        if ( this.context != null){
         	  IM_measurementResult = constructResult(rrts,packetLoss,
             			(i+1),PING_METHOD_HTTP);
               IM_result[0] = IM_measurementResult;
-              broadcastIntermediateMeasurement(IM_result,this.scheduler);
+              broadcastIntermediateMeasurement(IM_result,this.context);
         	  
          }
 

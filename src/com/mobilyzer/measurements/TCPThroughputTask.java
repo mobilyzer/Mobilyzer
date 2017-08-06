@@ -3,8 +3,8 @@
 package com.mobilyzer.measurements;
 
 import java.io.IOException;
-import java.io.InvalidClassException;
 import java.io.InputStream;
+import java.io.InvalidClassException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -15,22 +15,23 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Random;
 
+import android.content.Context;
+import android.content.Intent;
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import com.mobilyzer.MeasurementDesc;
 import com.mobilyzer.MeasurementResult;
+import com.mobilyzer.MeasurementResult.TaskProgress;
 import com.mobilyzer.MeasurementScheduler;
 import com.mobilyzer.MeasurementTask;
 import com.mobilyzer.UpdateIntent;
-import com.mobilyzer.MeasurementResult.TaskProgress;
 import com.mobilyzer.exceptions.MeasurementError;
 import com.mobilyzer.util.Logger;
 import com.mobilyzer.util.MLabNS;
 import com.mobilyzer.util.MeasurementJsonConvertor;
 import com.mobilyzer.util.PhoneUtils;
 
-import android.content.Context;
-import android.content.Intent;
-import android.os.Parcel;
-import android.os.Parcelable;
 
 /**
  * @author Haokun Luo
@@ -92,13 +93,13 @@ public class TCPThroughputTask extends MeasurementTask {
   private TaskProgress taskProgress;
   private volatile boolean stopFlag;
   
-  private MeasurementScheduler scheduler = null;  // added by Clarence
+  private Context IM_context = null;  // added by Clarence
   private TaskProgress Intermediate_TaskProgress = TaskProgress.COMPLETED;  //added by Clarence
   
   //added by Clarence, add broadcast to send the intermediate results
   
-  private void broadcastIntermediateMeasurement(MeasurementResult[] results, MeasurementScheduler scheduler) {
-	  this.scheduler = scheduler;
+  private void broadcastIntermediateMeasurement(MeasurementResult[] results, Context context) {
+	  this.IM_context = context;
       Intent intent = new Intent();
       intent.setAction(UpdateIntent.MEASUREMENT_INTERMEDIATE_PROGRESS_UPDATE_ACTION);
       //TODO fixed one value priority for all users task?
@@ -112,7 +113,7 @@ public class TCPThroughputTask extends MeasurementTask {
         //intent.putExtra(UpdateIntent.TASK_STATUS_PAYLOAD, Config.TASK_FINISHED);
         intent.putExtra(UpdateIntent.INTERMEDIATE_RESULT_PAYLOAD, results);
       
-      this.scheduler.sendBroadcast(intent);
+      this.IM_context.sendBroadcast(intent);
       }else{
     	 intent.putExtra(UpdateIntent.INTERMEDIATE_RESULT_PAYLOAD, "No intermediate results are broadcasted");
     	  
@@ -544,6 +545,8 @@ public class TCPThroughputTask extends MeasurementTask {
     Socket tcpSocket = null;
     InputStream iStream = null;
     OutputStream oStream = null;
+    
+    
 
     try {
       tcpSocket = new Socket();
@@ -561,6 +564,7 @@ public class TCPThroughputTask extends MeasurementTask {
 
     long startTime = System.currentTimeMillis();
     long endTime = startTime;
+    
    
     int  data_limit_byte_up =
         (int)(((TCPThroughputDesc)measurementDesc).data_limit_mb_up
@@ -585,10 +589,7 @@ public class TCPThroughputTask extends MeasurementTask {
         oStream.write(uplinkBuffer, 0, uplinkBuffer.length);
         oStream.flush();
         endTime = System.currentTimeMillis();
-        
-   
-        
-        
+
 
         this.totalSendSize += ((TCPThroughputDesc)measurementDesc).pkt_size_up_bytes;
         if (this.DATA_LIMIT_ON &&
@@ -629,8 +630,8 @@ public class TCPThroughputTask extends MeasurementTask {
             sampleResult);
           
         //added by Clarence
-          this.scheduler = this.getScheduler();  
-          if (this.scheduler != null){
+          this.IM_context = this.getContext();  
+          if (this.IM_context != null){
         	  PhoneUtils Intermediate_phoneUtils = PhoneUtils.getPhoneUtils();
         	  IntermediateResult = new MeasurementResult(Intermediate_phoneUtils.getDeviceInfo().deviceId,
         			  Intermediate_phoneUtils.getDeviceProperty(this.getKey()),TCPThroughputTask.TYPE,
@@ -641,7 +642,7 @@ public class TCPThroughputTask extends MeasurementTask {
         	  IntermediateResult.addResult("server_version", this.serverVersion);
         	  MeasurementResult[] IM_mrArray = new MeasurementResult[1];
           	  IM_mrArray[0] = IntermediateResult;
-          	  broadcastIntermediateMeasurement(IM_mrArray,this.scheduler); 
+          	  broadcastIntermediateMeasurement(IM_mrArray,this.IM_context); 
         	  
           }
         }
@@ -760,8 +761,8 @@ public class TCPThroughputTask extends MeasurementTask {
       this.startSampleTime = System.currentTimeMillis();
       
       //added by Clarence
-      this.scheduler = this.getScheduler();  
-      if (this.scheduler != null){
+      this.IM_context = this.getContext();  
+      if (this.IM_context != null){
     	  PhoneUtils Intermediate_phoneUtils = PhoneUtils.getPhoneUtils();
     	  IntermediateResult = new MeasurementResult(Intermediate_phoneUtils.getDeviceInfo().deviceId,
     			  Intermediate_phoneUtils.getDeviceProperty(this.getKey()),TCPThroughputTask.TYPE,
@@ -772,7 +773,7 @@ public class TCPThroughputTask extends MeasurementTask {
     	  IntermediateResult.addResult("server_version", this.serverVersion);
     	  MeasurementResult[] IM_mrArray = new MeasurementResult[1];
       	  IM_mrArray[0] = IntermediateResult;
-      	  broadcastIntermediateMeasurement(IM_mrArray,this.scheduler); 
+      	  broadcastIntermediateMeasurement(IM_mrArray,this.IM_context); 
     	  
       }
       

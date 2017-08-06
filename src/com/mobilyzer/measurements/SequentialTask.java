@@ -13,7 +13,6 @@
  */
 package com.mobilyzer.measurements;
 
-
 import java.io.InvalidClassException;
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
@@ -25,9 +24,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-
-import android.os.Parcel;
-import android.os.Parcelable;
+import java.util.concurrent.TimeoutException;
 
 import com.mobilyzer.Config;
 import com.mobilyzer.MeasurementDesc;
@@ -36,36 +33,36 @@ import com.mobilyzer.MeasurementTask;
 import com.mobilyzer.exceptions.MeasurementError;
 import com.mobilyzer.util.Logger;
 
+import android.os.Parcel;
+import android.os.Parcelable;
 
 /**
  * 
  * @author Ashkan Nikravesh (ashnik@umich.edu)
  * 
- * Parallel Task is a measurement task that can execute more than one measurement task 
- * in parallel using a thread pool.
+ * Sequential Task is a measurement task that can execute more than one measurement task 
+ * in series.
  */
-public class ParallelTask extends MeasurementTask{
-
-  private long duration;
+public class SequentialTask extends MeasurementTask{
   private List<MeasurementTask> tasks;
 
   private ExecutorService executor;
 
   // Type name for internal use
-  public static final String TYPE = "parallel";
+  public static final String TYPE = "sequential";
   // Human readable name for the task
-  public static final String DESCRIPTOR = "parallel";
-  
-  private long dataConsumed;
+  public static final String DESCRIPTOR = "sequential";
+  private volatile boolean stopFlag;
+  private long duration;
+  private volatile MeasurementTask currentTask;
 
+  public static class SequentialDesc extends MeasurementDesc {     
 
-  public static class ParallelDesc extends MeasurementDesc {     
-
-    public ParallelDesc(String key, Date startTime,
+    public SequentialDesc(String key, Date startTime,
         Date endTime, double intervalSec, long count, long priority,
         int contextIntervalSec, Map<String, String> params)
             throws InvalidParameterException {
-      super(ParallelTask.TYPE, key, startTime, endTime, intervalSec, count,
+      super(SequentialTask.TYPE, key, startTime, endTime, intervalSec, count,
         priority, contextIntervalSec, params);  
       //      initializeParams(params);
 
@@ -77,73 +74,74 @@ public class ParallelTask extends MeasurementTask{
 
     @Override
     public String getType() {
-      return ParallelTask.TYPE;
-    }   
+      return SequentialTask.TYPE;
+    }  
     
-    protected ParallelDesc(Parcel in) {
-      super(in);      
+    protected SequentialDesc(Parcel in) {
+      super(in);
     }
 
-    public static final Parcelable.Creator<ParallelDesc> CREATOR =
-        new Parcelable.Creator<ParallelDesc>() {
-      public ParallelDesc createFromParcel(Parcel in) {
-        return new ParallelDesc(in);
+    public static final Parcelable.Creator<SequentialDesc> CREATOR
+    = new Parcelable.Creator<SequentialDesc>() {
+      public SequentialDesc createFromParcel(Parcel in) {
+        return new SequentialDesc(in);
       }
 
-      public ParallelDesc[] newArray(int size) {
-        return new ParallelDesc[size];
+      public SequentialDesc[] newArray(int size) {
+        return new SequentialDesc[size];
       }
     };
   }
 
   @SuppressWarnings("rawtypes")
   public static Class getDescClass() throws InvalidClassException {
-    return ParallelDesc.class;
+    return SequentialDesc.class;
   }
 
 
 
-  public ParallelTask(MeasurementDesc desc,  ArrayList<MeasurementTask> tasks) {
-    super(new ParallelDesc(desc.key, desc.startTime, desc.endTime, desc.intervalSec,
-      desc.count, desc.priority, desc.contextIntervalSec, desc.parameters));
+  public SequentialTask(MeasurementDesc desc, ArrayList<MeasurementTask> tasks) {
+    super(new SequentialDesc(desc.key, desc.startTime, desc.endTime,
+      desc.intervalSec, desc.count, desc.priority, desc.contextIntervalSec,
+      desc.parameters));
     this.tasks=(List<MeasurementTask>) tasks.clone();
-    long maxduration=0;
+    //we are using executor because it has builtin support for execution timeouts.
+    executor=Executors.newSingleThreadExecutor();
+    long totalduration=0;
     for(MeasurementTask mt: tasks){
-      if(mt.getDuration()>maxduration){
-        maxduration=mt.getDuration();
-      }
+      totalduration+=mt.getDuration();
     }
-    this.duration=maxduration;
-    this.dataConsumed=0;
-
+    this.duration=totalduration;
+    this.stopFlag=false;
+    this.currentTask=null;
   }
   
-  protected ParallelTask(Parcel in) {
+  protected SequentialTask(Parcel in) {
     super(in);
-//    ClassLoader loader = Thread.currentThread().getContextClassLoader();
+    ClassLoader loader = Thread.currentThread().getContextClassLoader();
     // we cannot directly cast Parcelable[] to MeasurementTask[]. Cast them one-by-one
-    Parcelable[] tempTasks = in.readParcelableArray(MeasurementTask.class.getClassLoader());
+    Parcelable[] tempTasks = in.readParcelableArray(loader);
+    executor=Executors.newSingleThreadExecutor();
     tasks = new ArrayList<MeasurementTask>();
-    long maxDuration = 0;
+    long totalduration=0;
     for ( Parcelable pTask : tempTasks ) {
       MeasurementTask mt = (MeasurementTask) pTask;
       tasks.add(mt);
-      if (mt.getDuration() > maxDuration) {
-        maxDuration = mt.getDuration();
-      }
+      totalduration+=mt.getDuration();
     }
-    this.duration = maxDuration;
-    this. dataConsumed = 0;
+    this.duration = totalduration;
+    this.stopFlag=false;
+    this.currentTask=null;
   }
 
-  public static final Parcelable.Creator<ParallelTask> CREATOR
-      = new Parcelable.Creator<ParallelTask>() {
-    public ParallelTask createFromParcel(Parcel in) {
-      return new ParallelTask(in);
+  public static final Parcelable.Creator<SequentialTask> CREATOR
+  = new Parcelable.Creator<SequentialTask>() {
+    public SequentialTask createFromParcel(Parcel in) {
+      return new SequentialTask(in);
     }
 
-    public ParallelTask[] newArray(int size) {
-      return new ParallelTask[size];
+    public SequentialTask[] newArray(int size) {
+      return new SequentialTask[size];
     }
   };
 
@@ -158,6 +156,7 @@ public class ParallelTask extends MeasurementTask{
     dest.writeParcelableArray(tasks.toArray(new MeasurementTask[tasks.size()]), flags);
   }
   
+
   @Override
   public String getDescriptor() {
     return DESCRIPTOR;
@@ -165,31 +164,35 @@ public class ParallelTask extends MeasurementTask{
 
   @Override
   public MeasurementResult[] call() throws MeasurementError {
-	 for (MeasurementTask task: this.tasks){
-		 task.setScheduler(this.getScheduler());
-	 }           //added by Clarence
-    long timeout=duration;
-    executor=Executors.newFixedThreadPool(this.tasks.size());
 
-    if(timeout==0){
-      timeout=Config.DEFAULT_PARALLEL_TASK_DURATION;
-    }else{
-      //this is the longest time a task can run before it is forcibly killed
-      timeout*=2;
-    }
     ArrayList<MeasurementResult> allResults=new ArrayList<MeasurementResult>();
-    List<Future<MeasurementResult[]>> futures;
     try {
-      futures=executor.invokeAll(this.tasks,timeout,TimeUnit.MILLISECONDS);
-      for(Future<MeasurementResult[]> f: futures){
-        MeasurementResult[] r=f.get();
-        for(int i=0;i<r.length;i++){
-          allResults.add(r[i]);
+      //      futures=executor.invokeAll(this.tasks,timeout,TimeUnit.MILLISECONDS);
+      for(MeasurementTask mt: tasks){
+    	mt.setContext(this.getContext());
+        if(stopFlag){
+          throw new MeasurementError("Cancelled");
+        }
+        Future<MeasurementResult[]> f=executor.submit(mt);
+        currentTask=mt;
+        MeasurementResult[] results;
+        //specifying timeout for each task based on its duration
+        try {
+          results = f.get( mt.getDuration()==0 ?
+              Config.DEFAULT_TASK_DURATION_TIMEOUT * 2 : mt.getDuration() * 2,
+              TimeUnit.MILLISECONDS);
+          for(int i=0;i<results.length;i++){
+            allResults.add(results[i]);
+          }
+        } catch (TimeoutException e) {
+          if(mt.stop()){
+            f.cancel(true);
+          }
         }
       }
 
     } catch (InterruptedException e) {
-      Logger.e("Parallel task " + this.getTaskId()+" got interrupted");
+      Logger.e("Sequential task " + this.getTaskId() + " got interrupted!");
     }catch (ExecutionException e) {
       throw new MeasurementError("Execution error: " + e.getCause());
     }
@@ -202,24 +205,31 @@ public class ParallelTask extends MeasurementTask{
 
   @Override
   public String getType() {
-    return ParallelTask.TYPE;
+    return SequentialTask.TYPE;
   }
 
   @Override
   public MeasurementTask clone() {
     MeasurementDesc desc = this.measurementDesc;
-    ParallelDesc newDesc = new ParallelDesc(desc.key, desc.startTime, desc.endTime, 
+    SequentialDesc newDesc = new SequentialDesc(desc.key, desc.startTime, desc.endTime, 
       desc.intervalSec, desc.count, desc.priority, desc.contextIntervalSec, desc.parameters);
     ArrayList<MeasurementTask> newTaskList=new ArrayList<MeasurementTask>();
     for(MeasurementTask mt: tasks){
       newTaskList.add(mt.clone());
     }
-    return new ParallelTask(newDesc,newTaskList);
+    return new SequentialTask(newDesc,newTaskList);
   }
 
   @Override
   public boolean stop() {
-    return false;
+    if(currentTask.stop()){
+      stopFlag=true;
+      executor.shutdown();
+      return true;
+    }else{
+      return false;
+    }
+    
   }
 
   @Override
@@ -243,6 +253,7 @@ public class ParallelTask extends MeasurementTask{
   //TODO
   @Override
   public long getDataConsumed() {
-    return dataConsumed;
+    return 0;
   }
+
 }
