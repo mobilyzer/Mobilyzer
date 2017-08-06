@@ -6,7 +6,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.concurrent.Callable;
-
+import android.content.Context;
 import com.mobilyzer.exceptions.MeasurementError;
 import com.mobilyzer.measurements.DnsLookupTask;
 import com.mobilyzer.measurements.HttpTask;
@@ -29,6 +29,9 @@ public abstract class MeasurementTask
       Parcelable {
   protected MeasurementDesc measurementDesc;
   protected String taskId;
+		  
+  //private MeasurementScheduler scheduler; 
+  private Context context = null;  
 
 
   public static final int USER_PRIORITY = Integer.MIN_VALUE;
@@ -113,6 +116,15 @@ public abstract class MeasurementTask
 
   public void setKey(String key) {
     this.measurementDesc.key = key;
+  }
+		  
+  //  pass scheduler to every specific task
+  public void setContext(Context context) {
+	    this.context = context;
+  }
+  
+  public Context getContext() {
+	  return this.context;
   }
 
 

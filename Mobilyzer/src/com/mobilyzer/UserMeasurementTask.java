@@ -17,7 +17,7 @@ package com.mobilyzer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.Callable;
-
+import android.content.Context;
 import android.content.Intent;
 
 import com.mobilyzer.MeasurementResult.TaskProgress;
@@ -33,6 +33,7 @@ public class UserMeasurementTask implements Callable<MeasurementResult[]> {
   public UserMeasurementTask(MeasurementTask task,
                              MeasurementScheduler scheduler) {
     realTask = task;
+    realTask.setContext(scheduler.getApplicationContext());  
     this.scheduler = scheduler;  
     this.contextCollector= new ContextCollector();
   }
@@ -96,9 +97,11 @@ public class UserMeasurementTask implements Callable<MeasurementResult[]> {
       ArrayList<HashMap<String, String>> contextResults =
           contextCollector.stopCollector();
       for (MeasurementResult r: results){
+		String testIntermediateFirst = r.toString();
         r.addContextResults(contextResults);
         r.getDeviceProperty().dnResolvability=contextCollector.dnsConnectivity;
         r.getDeviceProperty().ipConnectivity=contextCollector.ipConnectivity;
+        String testIntermediateSecond = r.toString();
       } 
     } catch (MeasurementError e) {
       Logger.e("User measurement " + realTask.getDescriptor() + " has failed");

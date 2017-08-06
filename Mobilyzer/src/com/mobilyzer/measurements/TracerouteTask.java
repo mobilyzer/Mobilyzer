@@ -13,7 +13,8 @@
  */
 
 package com.mobilyzer.measurements;
-
+import android.content.Context;
+import android.content.Intent;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -50,6 +51,8 @@ import com.mobilyzer.util.Logger;
 import com.mobilyzer.util.MeasurementJsonConvertor;
 import com.mobilyzer.util.PhoneUtils;
 import com.mobilyzer.util.Util;
+import com.mobilyzer.MeasurementScheduler;
+import com.mobilyzer.UpdateIntent;
 
 
 /**
@@ -86,6 +89,33 @@ public class TracerouteTask extends MeasurementTask implements PreemptibleMeasur
 
   // Track data consumption for this task to avoid exceeding user's limit
   private long dataConsumed;
+  private Context context = null;  
+  private TaskProgress Intermediate_TaskProgress = TaskProgress.COMPLETED;  
+  
+  // add broadcast to send the intermediate results
+  
+  private void broadcastIntermediateMeasurement(MeasurementResult[] results, Context context) {
+	  this.context = context;
+      Intent intent = new Intent();
+      intent.setAction(UpdateIntent.MEASUREMENT_INTERMEDIATE_PROGRESS_UPDATE_ACTION);
+      //TODO fixed one value priority for all users task?
+      intent.putExtra(UpdateIntent.TASK_PRIORITY_PAYLOAD,
+        MeasurementTask.USER_PRIORITY);
+      intent.putExtra(UpdateIntent.TASKID_PAYLOAD, this.getTaskId());
+      intent.putExtra(UpdateIntent.CLIENTKEY_PAYLOAD, this.getKey());
+
+      if (results != null){
+    	  
+        //intent.putExtra(UpdateIntent.TASK_STATUS_PAYLOAD, Config.TASK_FINISHED);
+        intent.putExtra(UpdateIntent.INTERMEDIATE_RESULT_PAYLOAD, results);
+      
+      this.context.sendBroadcast(intent);
+      }else{
+    	 intent.putExtra(UpdateIntent.INTERMEDIATE_RESULT_PAYLOAD, "No intermediate results are broadcasted");
+    	  
+     }
+
+  }
 
   /**
    * The description of the Traceroute measurement
@@ -323,6 +353,7 @@ public class TracerouteTask extends MeasurementTask implements PreemptibleMeasur
       throw new MeasurementError("target " + target + " cannot be resolved");
     }
     MeasurementResult result = null;
+    MeasurementResult intermediateResult = null; 
 
 
     ExecutorService hopExecutorService = Executors.newFixedThreadPool(task.parallelProbeNum);
@@ -396,6 +427,31 @@ public class TracerouteTask extends MeasurementTask implements PreemptibleMeasur
             }
 
           }
+        }
+        this.context = this.getContext();
+        if (this.context != null){
+        
+      	  PhoneUtils Intermediate_phoneUtils = PhoneUtils.getPhoneUtils();
+      	  intermediateResult = new MeasurementResult(Intermediate_phoneUtils.getDeviceInfo().deviceId,
+      			  Intermediate_phoneUtils.getDeviceProperty(this.getKey()),TracerouteTask.TYPE,
+      			  System.currentTimeMillis()*1000,Intermediate_TaskProgress,this.measurementDesc);
+      	  
+      	  intermediateResult.addResult("num_hops", hop.ttl);
+      	  
+      	  for (int i = 0; i < hopHosts.size(); i++) {
+            HopInfo intermediateHopInfo = hopHosts.get(i);
+            int intermediateHostIdx = 1;   
+            for (String intermediateHost : intermediateHopInfo.hosts) {
+              intermediateResult.addResult("hop_" + intermediateHopInfo.ttl + "_addr_" + intermediateHostIdx++, intermediateHost);
+            }
+            intermediateResult.addResult("hop_" + intermediateHopInfo.ttl + "_rtt_ms", String.format("%.3f", intermediateHopInfo.rtt));
+            
+          }
+      	  
+
+      	  MeasurementResult[] intermediateMrArray = new MeasurementResult[1];
+      	  intermediateMrArray[0] = intermediateResult;
+      	  broadcastIntermediateMeasurement(intermediateMrArray,this.context);  
         }
 
       } catch (InterruptedException e) {
